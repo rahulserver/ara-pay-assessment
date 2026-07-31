@@ -1,0 +1,18 @@
+{
+  "name": "ara-fullstack-integration-puzzle",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "server",
+    "client",
+    "simulator"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace server\" \"npm run dev --workspace client\"",
+    "dev:sim": "npm run dev --workspace simulator",
+    "build": "npm run build --workspace server && npm run build --workspace client"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
