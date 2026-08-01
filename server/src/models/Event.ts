@@ -1,8 +1,6 @@
 import { HydratedDocument, Schema, model } from "mongoose";
 import { EventType } from "../zschemas";
 
-export type { EventType };
-
 export interface Event {
   sourceEventId: string;
   type: EventType;
