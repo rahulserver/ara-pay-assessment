@@ -14,7 +14,7 @@ router.get("/", asyncHandler(async (_req, res) => {
   res.json(rules);
 }));
 
-router.post("/", async (req, res) => {
+router.post("/", asyncHandler(async (req, res) => {
   const result = CreateRuleSchema.safeParse(req.body);
 
   if (!result.success) {
@@ -37,6 +37,6 @@ router.post("/", async (req, res) => {
   });
 
   res.status(201).json(created);
-});
+}));
 
 export default router;

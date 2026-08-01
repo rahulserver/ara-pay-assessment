@@ -4,12 +4,13 @@ import { EventModel } from "../models/Event";
 import { processEvent } from "../services/pipeline";
 import { Http } from "../constants";
 import { IncomingWebhookEventSchema } from "../zschemas";
+import { asyncHandler } from "../utils/asyncHandler";
 
 const router = Router();
 
 router.use(express.json({ limit: Http.MAX_WEBHOOK_BODY_SIZE }));
 
-router.post("/events", async (req, res) => {
+router.post("/events", asyncHandler(async (req, res) => {
   const result = IncomingWebhookEventSchema.safeParse(req.body);
 
   if (!result.success) {
@@ -56,6 +57,6 @@ router.post("/events", async (req, res) => {
   });
 
   res.status(200).json({ received: true, eventId: eventDoc.sourceEventId });
-});
+}));
 
 export default router;
