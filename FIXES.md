@@ -16,7 +16,7 @@ Code review of auth middleware. The original comment admitted it: `"we allow sli
 Local dev shortcut that was never reverted before handoff.
 
 **Fix:**
-Removed `ignoreExpiration: true`. `jwt.verify()` now enforces token expiry as intended. Expired tokens return `401`.
+Made `ignoreExpiration` conditional on `NODE_ENV === "development"`. In production, tokens expire as intended. In local dev, the convenience bypass is preserved intentionally.
 
 ---
 
