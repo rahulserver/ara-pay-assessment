@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { env } from "../config/env";
 import { UserModel } from "../models/User";
+import { asyncHandler } from "../utils/asyncHandler";
 
 const router = Router();
 
@@ -26,7 +27,7 @@ export async function ensureDefaultUser(): Promise<void> {
   console.log("[auth] seeded default owner user");
 }
 
-router.post("/login", async (req, res) => {
+router.post("/login", asyncHandler(async (req, res) => {
   const { email, password } = req.body as { email?: string; password?: string };
 
   if (!email || !password) {
@@ -50,7 +51,7 @@ router.post("/login", async (req, res) => {
 
   const token = jwt.sign({ email: user.email }, env.jwtSecret, {
     subject: user.id,
-    expiresIn: env.jwtExpiresIn
+    expiresIn: env.jwtExpiresIn as `${number}${"s" | "m" | "h" | "d" | "w"}`
   });
 
   res.json({
@@ -61,6 +62,6 @@ router.post("/login", async (req, res) => {
       role: user.role
     }
   });
-});
+}));
 
 export default router;
