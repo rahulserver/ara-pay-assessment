@@ -101,3 +101,51 @@ Local dev shortcut that was never reverted before handoff.
 **Fix:**
 Made `ignoreExpiration` conditional on `NODE_ENV === "development"`. In production, tokens expire as intended. In local dev, the convenience bypass is preserved intentionally.
 
+---
+
+## [BUG] Rules API field name mismatch — rule creation silently failed from UI
+
+**Files:** `server/src/zschemas/index.ts`, `server/src/routes/rules.ts`
+
+**What was broken:**
+The server `POST /rules` expected snake_case fields (`event_type`, `min_amount`, `account_id`) but the client was sending camelCase (`eventType`, `minAmount`, `accountId`). Rule creation always failed with a 400. The original `saveRule` in `api.ts` had a comment admitting this: `// API mismatch is noisy in current backend, suppressing for now.` — and swallowed all errors, making the failure invisible.
+
+**How identified:**
+Comparing `RuleDraft` interface in `client/lib/types.ts` against the server's `CreateRuleSchema`. The suppressed catch block was the explicit admission.
+
+**Root cause:**
+The server used snake_case for this one endpoint while the rest of the codebase (Mongoose models, responses, client) consistently uses camelCase. A contractor inconsistency, not a deliberate design choice.
+
+**Fix:**
+Updated `CreateRuleSchema` to use camelCase field names, consistent with the rest of the codebase. Also fixed `minAmount` to use `z.coerce.number()` since the form sends it as a string from a text input.
+
+**Why this approach:**
+The server's own models and response payloads already use camelCase. Fixing the server to be internally consistent is cleaner than adding transformation logic or changing the client to match an inconsistency.
+
+---
+
+## [BUG] Async route handlers missing error forwarding — unhandled rejections in Express 4
+
+**Files:** All route files, `server/src/utils/asyncHandler.ts`
+
+**What was broken:**
+All route handlers used `async` functions but had no try/catch and never called `next(error)`. In Express 4, unhandled promise rejections in async handlers do not reach the global error middleware — they become unhandled rejections that crash or silently swallow the error.
+
+**How identified:**
+Code review of all route files. None used try/catch or `next`.
+
+**Root cause:**
+Express 5 handles this automatically, but Express 4 (v4.22.1 in use here) does not. The original code was written assuming automatic propagation that doesn't exist in Express 4.
+
+**Fix:**
+Created `server/src/utils/asyncHandler.ts` — a wrapper that catches rejected promises and forwards them to `next(error)`. Applied to all 6 async route handlers across `auth.ts`, `notifications.ts`, `rules.ts`, and `webhooks.ts`.
+
+---
+
+## Deliberately left out of scope
+
+- **CORS open to all origins** (`app.use(cors())` with no whitelist): Acceptable for a local/internal tool. Would need an origin allowlist before public deployment.
+- **No rate limiting on webhook endpoint**: No protection against event flooding. A queue-backed pipeline (see DESIGN.md) is the right fix at scale, not a request rate limiter.
+- **No token refresh mechanism**: Client re-authenticates after 1h expiry. Acceptable for a dashboard with a single user; would need refresh tokens for production.
+- **Client `saveRule` error suppression**: The comment `// API mismatch is noisy in current backend, suppressing for now` was left in the client — the underlying API mismatch is fixed on the server, but the client-side error handling still needs to be cleaned up (tracked separately).
+
