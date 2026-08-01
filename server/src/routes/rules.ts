@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
 import { RuleModel } from "../models/Rule";
@@ -16,7 +17,7 @@ router.post("/", async (req, res) => {
   const result = CreateRuleSchema.safeParse(req.body);
 
   if (!result.success) {
-    res.status(400).json({ error: "invalid rule payload", detail: result.error.flatten() });
+    res.status(400).json({ error: "invalid rule payload", detail: z.treeifyError(result.error) });
     return;
   }
 

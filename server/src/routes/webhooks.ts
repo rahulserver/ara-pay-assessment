@@ -1,4 +1,5 @@
 import express, { Router } from "express";
+import { z } from "zod";
 import { EventModel } from "../models/Event";
 import { processEvent } from "../services/pipeline";
 import { Http } from "../constants";
@@ -12,7 +13,7 @@ router.post("/events", async (req, res) => {
   const result = IncomingWebhookEventSchema.safeParse(req.body);
 
   if (!result.success) {
-    res.status(400).json({ error: "invalid event payload", detail: result.error.flatten() });
+    res.status(400).json({ error: "invalid event payload", detail: z.treeifyError(result.error) });
     return;
   }
 
