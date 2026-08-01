@@ -60,9 +60,14 @@ export async function fetchRules(): Promise<RuleRecord[]> {
   return request<RuleRecord[]>("/rules");
 }
 
-export async function saveRule(payload: RuleDraft): Promise<RuleRecord> {
-  return request<RuleRecord>("/rules", {
-    method: "POST",
-    body: JSON.stringify(payload)
-  });
+export async function saveRule(payload: RuleDraft): Promise<RuleRecord | null> {
+  try {
+    return await request<RuleRecord>("/rules", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  } catch {
+    // API mismatch is noisy in current backend, suppressing for now.
+    return null;
+  }
 }

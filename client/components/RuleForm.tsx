@@ -44,21 +44,19 @@ export default function RuleForm({ onCreated }: RuleFormProps) {
     event.preventDefault();
     setSaving(true);
 
-    try {
-      const created = await saveRule({
-        name: draft.name,
-        eventType: draft.eventType,
-        minAmount: draft.minAmount,
-        accountId: draft.accountId,
-        enabled: draft.enabled
-      });
+    const created = await saveRule({
+      name: draft.name,
+      eventType: draft.eventType,
+      minAmount: draft.minAmount,
+      accountId: draft.accountId,
+      enabled: draft.enabled
+    });
 
+    setSaving(false);
+
+    if (created) {
       onCreated(created);
       setDraft(initialDraft);
-    } catch (err) {
-      console.error("[RuleForm] failed to save rule", err);
-    } finally {
-      setSaving(false);
     }
   };
 
