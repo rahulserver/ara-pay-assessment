@@ -41,6 +41,29 @@ Added Zod (`server/src/zschemas/index.ts`) as single source of truth for both ru
 
 ---
 
+## [BUG] eventDoc.save() not awaited — race condition and silent failures
+
+**File:** `server/src/routes/webhooks.ts`
+
+**What was broken:**
+`eventDoc.save()` was called without `await`. The FIXME comment in the original code acknowledged this explicitly. Consequences:
+- `processEvent` could run before the event was persisted to DB (race condition)
+- If `save()` threw (e.g. duplicate `sourceEventId`), the error was silently lost
+- A `200` response was returned even if the DB write failed
+
+**How identified:**
+Code trace of the webhook handler. The original `// FIXME` comment confirmed it was a known gap.
+
+**Root cause:**
+Intentional deferral by the contractor — comment said "should be awaited once we tighten pipeline consistency."
+
+**Fix:**
+- Added `await` to `eventDoc.save()`
+- Wrapped in try/catch with duplicate key check (MongoDB error code `11000`) — returns `200 + duplicate: true` for idempotent replays instead of a 500
+- Moved `processEvent` call to after the save succeeds, eliminating the race condition
+
+---
+
 ## [CORE] Pipeline stub — no notifications were ever created
 
 **File:** `server/src/services/pipeline.ts`
