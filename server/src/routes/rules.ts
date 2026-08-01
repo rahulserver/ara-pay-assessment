@@ -3,15 +3,16 @@ import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
 import { RuleModel } from "../models/Rule";
 import { CreateRuleSchema } from "../zschemas";
+import { asyncHandler } from "../utils/asyncHandler";
 
 const router = Router();
 
 router.use(requireAuth);
 
-router.get("/", async (_req, res) => {
+router.get("/", asyncHandler(async (_req, res) => {
   const rules = await RuleModel.find().sort({ createdAt: -1 });
   res.json(rules);
-});
+}));
 
 router.post("/", async (req, res) => {
   const result = CreateRuleSchema.safeParse(req.body);
