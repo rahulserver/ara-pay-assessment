@@ -6,6 +6,8 @@ import { UserModel } from "../models/User";
 
 const router = Router();
 
+// Ensures that a default user exists in the database. 
+// If not, it creates one with a predefined email and password.
 export async function ensureDefaultUser(): Promise<void> {
   const existing = await UserModel.findOne({ email: "owner@ara-research.dev" });
 
