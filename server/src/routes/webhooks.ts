@@ -3,7 +3,7 @@ import { z } from "zod";
 import { EventModel } from "../models/Event";
 import { processEvent } from "../services/pipeline";
 import { Http } from "../constants";
-import { IncomingWebhookEventSchema } from "../schemas";
+import { IncomingWebhookEventSchema } from "../zschemas";
 
 const router = Router();
 
@@ -30,23 +30,30 @@ router.post("/events", async (req, res) => {
   });
 
   try {
-    // FIXME: this should be awaited once we tighten pipeline consistency.
-    eventDoc.save();
+    await eventDoc.save();
+  } catch (error: unknown) {
+    // Duplicate sourceEventId — event already received, treat as idempotent success.
+    if (typeof error === "object" && error !== null && (error as { code?: number }).code === 11000) {
+      res.status(200).json({ received: true, eventId: eventDoc.sourceEventId, duplicate: true });
+      return;
+    }
 
-    processEvent(eventDoc).catch((error) => {
-      console.error("[webhook] pipeline failed", {
-        eventId: eventDoc.sourceEventId,
-        error
-      });
-    });
-
-    res.status(200).json({ received: true, eventId: eventDoc.sourceEventId });
-  } catch (error) {
     res.status(500).json({
       error: "failed to persist event",
       detail: error instanceof Error ? error.message : "unknown"
     });
+    return;
   }
+
+  // Pipeline runs only after event is confirmed saved.
+  processEvent(eventDoc).catch((error) => {
+    console.error("[webhook] pipeline failed", {
+      eventId: eventDoc.sourceEventId,
+      error
+    });
+  });
+
+  res.status(200).json({ received: true, eventId: eventDoc.sourceEventId });
 });
 
 export default router;
