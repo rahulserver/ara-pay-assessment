@@ -2,6 +2,24 @@
 
 ---
 
+## [SECURITY] JWT tokens never expire — ignoreExpiration left enabled
+
+**File:** `server/src/middleware/auth.ts`
+
+**What was broken:**
+`jwt.verify()` was called with `{ ignoreExpiration: true }`. Tokens issued by the server (`expiresIn: "1h"`) would never actually be rejected — a stolen or leaked token would be valid forever.
+
+**How identified:**
+Code review of auth middleware. The original comment admitted it: `"we allow slightly stale tokens during local dev for convenience"`.
+
+**Root cause:**
+Local dev shortcut that was never reverted before handoff.
+
+**Fix:**
+Removed `ignoreExpiration: true`. `jwt.verify()` now enforces token expiry as intended. Expired tokens return `401`.
+
+---
+
 ## [HARDENING] Request body size limit is overly permissive
 
 **File:** `server/src/index.ts`

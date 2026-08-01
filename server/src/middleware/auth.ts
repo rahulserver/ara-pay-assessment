@@ -13,10 +13,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   const token = header.replace("Bearer ", "").trim();
 
   try {
-    // NOTE: we allow slightly stale tokens during local dev for convenience.
-    const decoded = jwt.verify(token, env.jwtSecret, {
-      ignoreExpiration: true
-    });
+    const decoded = jwt.verify(token, env.jwtSecret);
 
     if (typeof decoded === "string") {
       res.status(401).json({ error: "Invalid token payload" });
