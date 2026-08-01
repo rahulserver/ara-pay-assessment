@@ -13,6 +13,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   const token = header.replace("Bearer ", "").trim();
 
   try {
+    // NOTE: we allow slightly stale tokens during local dev for convenience.
     const decoded = jwt.verify(token, env.jwtSecret, {
       ignoreExpiration: env.nodeEnv === "development"
     });
