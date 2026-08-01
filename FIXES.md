@@ -2,27 +2,6 @@
 
 ---
 
-## [CORE] Pipeline stub — no notifications were ever created
-
-**File:** `server/src/services/pipeline.ts`
-
-**What was broken:**
-`processEvent` found matching rules but hit three TODO stubs and returned without creating any `Notification` documents. The entire notification flow produced zero output.
-
-**How identified:**
-Code trace — the for loop had `doesRuleLikelyMatch` working correctly but the match block was explicitly marked as a stub with `// Intentionally left as a stub for now.`
-
-**Root cause:**
-Contractor left the pipeline unimplemented. The scaffolding (loop, per-rule try/catch, match function) was in place but the core action — creating a notification — was missing.
-
-**Fix:**
-Implemented `NotificationModel.create()` for each matching rule with a human-readable message. Per-rule try/catch was already in place, so failures in one rule don't drop processing of subsequent rules.
-
-**Scope note:**
-The current evaluation engine (`doesRuleLikelyMatch`) handles the three defined conditions: `eventType`, `minAmount`, `accountId`. The original TODO said "full rule evaluation engine" — this is a basic implementation covering the specified conditions, not a general-purpose engine. Extensions like regex on `accountId` or payload field matching remain out of scope.
-
----
-
 ## [HARDENING] Request body size limit is overly permissive
 
 **File:** `server/src/index.ts`
@@ -58,4 +37,26 @@ Code review. `typeof event.amount !== "number"` was the only field with a type c
 Early implementation with no validation library. Manual checks are brittle and easy to miss.
 
 **Fix:**
-Added Zod (`server/src/schemas/index.ts`) as single source of truth for both runtime validation and TypeScript types. `IncomingWebhookEventSchema` and `CreateRuleSchema` replace all manual checks. Error responses now return field-level detail via `z.treeifyError()`. The `interface` declarations and `as` casts were removed entirely.
+Added Zod (`server/src/zschemas/index.ts`) as single source of truth for both runtime validation and TypeScript types. `IncomingWebhookEventSchema` and `CreateRuleSchema` replace all manual checks. Error responses now return field-level detail via `z.treeifyError()`. The `interface` declarations and `as` casts were removed entirely.
+
+---
+
+## [CORE] Pipeline stub — no notifications were ever created
+
+**File:** `server/src/services/pipeline.ts`
+
+**What was broken:**
+`processEvent` found matching rules but hit three TODO stubs and returned without creating any `Notification` documents. The entire notification flow produced zero output.
+
+**How identified:**
+Code trace — the for loop had `doesRuleLikelyMatch` working correctly but the match block was explicitly marked as a stub with `// Intentionally left as a stub for now.`
+
+**Root cause:**
+Contractor left the pipeline unimplemented. The scaffolding (loop, per-rule try/catch, match function) was in place but the core action — creating a notification — was missing.
+
+**Fix:**
+Implemented `NotificationModel.create()` for each matching rule with a human-readable message. Per-rule try/catch was already in place, so failures in one rule don't drop processing of subsequent rules.
+
+**Scope note:**
+The current evaluation engine (`doesRuleLikelyMatch`) handles the three defined conditions: `eventType`, `minAmount`, `accountId`. The original TODO said "full rule evaluation engine" — this is a basic implementation covering the specified conditions, not a general-purpose engine. Extensions like regex on `accountId` or payload field matching remain out of scope.
+
