@@ -2,7 +2,7 @@ import { z } from "zod";
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
 import { RuleModel } from "../models/Rule";
-import { CreateRuleSchema } from "../schemas";
+import { CreateRuleSchema } from "../zschemas";
 
 const router = Router();
 
@@ -29,9 +29,9 @@ router.post("/", async (req, res) => {
     enabled: body.enabled ?? true,
     channel: body.channel ?? "in_app",
     conditions: {
-      eventType: body.event_type,
-      minAmount: body.min_amount,
-      accountId: body.account_id
+      eventType: body.eventType,
+      minAmount: body.minAmount,
+      accountId: body.accountId
     }
   });
 
