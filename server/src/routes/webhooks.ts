@@ -46,6 +46,8 @@ router.post("/events", async (req, res) => {
   }
 
   // Pipeline runs only after event is confirmed saved.
+  // Intentionally not awaited — response is sent immediately, pipeline runs in background.
+  // Future: move to a queue (e.g. BullMQ) if processing becomes slow or volume grows significantly.
   processEvent(eventDoc).catch((error) => {
     console.error("[webhook] pipeline failed", {
       eventId: eventDoc.sourceEventId,
