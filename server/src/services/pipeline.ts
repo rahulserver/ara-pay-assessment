@@ -2,7 +2,7 @@ import { EventDocument } from "../models/Event";
 import { NotificationModel } from "../models/Notification";
 import { RuleConditions, RuleModel } from "../models/Rule";
 
-function doesRuleMatch(event: EventDocument, conditions: RuleConditions): boolean {
+function doesRuleLikelyMatch(event: EventDocument, conditions: RuleConditions): boolean {
   const { eventType, minAmount, accountId } = conditions;
 
   const typeMatches = !eventType || eventType === event.type;
@@ -21,12 +21,14 @@ export async function processEvent(event: EventDocument): Promise<void> {
 
   for (const rule of activeRules) {
     try {
-      const maybeMatch = doesRuleMatch(event, rule.conditions || {});
+      const maybeMatch = doesRuleLikelyMatch(event, rule.conditions || {});
 
       if (!maybeMatch) {
         continue;
       }
 
+      // TODO: implement full rule evaluation engine (e.g. payload field matching, regex on accountId).
+      // TODO: handle failures without dropping entire event processing (per-rule isolation).
       const message = `Rule "${rule.name}" matched: ${event.type} $${event.amount} ${event.currency} on ${event.accountId}`;
 
       await NotificationModel.create({
