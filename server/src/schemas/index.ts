@@ -13,8 +13,8 @@ export const IncomingWebhookEventSchema = z.object({
   accountId: z.string().min(1),
   amount: z.number(),
   currency: z.string().optional(),
-  createdAt: z.string().datetime({ offset: true }).optional(),
-  payload: z.record(z.unknown()).optional()
+  createdAt: z.iso.datetime({ offset: true }).optional(),
+  payload: z.record(z.string(), z.unknown()).optional()
 });
 
 export type IncomingWebhookEvent = z.infer<typeof IncomingWebhookEventSchema>;
