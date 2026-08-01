@@ -2,24 +2,6 @@
 
 ---
 
-## [SECURITY] JWT tokens never expire — ignoreExpiration left enabled
-
-**File:** `server/src/middleware/auth.ts`
-
-**What was broken:**
-`jwt.verify()` was called with `{ ignoreExpiration: true }`. Tokens issued by the server (`expiresIn: "1h"`) would never actually be rejected — a stolen or leaked token would be valid forever.
-
-**How identified:**
-Code review of auth middleware. The original comment admitted it: `"we allow slightly stale tokens during local dev for convenience"`.
-
-**Root cause:**
-Local dev shortcut that was never reverted before handoff.
-
-**Fix:**
-Made `ignoreExpiration` conditional on `NODE_ENV === "development"`. In production, tokens expire as intended. In local dev, the convenience bypass is preserved intentionally.
-
----
-
 ## [HARDENING] Request body size limit is overly permissive
 
 **File:** `server/src/index.ts`
@@ -100,4 +82,22 @@ Implemented `NotificationModel.create()` for each matching rule with a human-rea
 
 **Scope note:**
 The current evaluation engine (`doesRuleLikelyMatch`) handles the three defined conditions: `eventType`, `minAmount`, `accountId`. The original TODO said "full rule evaluation engine" — this is a basic implementation covering the specified conditions, not a general-purpose engine. Extensions like regex on `accountId` or payload field matching remain out of scope.
+
+---
+
+## [SECURITY] JWT tokens never expire — ignoreExpiration left enabled
+
+**File:** `server/src/middleware/auth.ts`
+
+**What was broken:**
+`jwt.verify()` was called with `{ ignoreExpiration: true }`. Tokens issued by the server (`expiresIn: "1h"`) would never actually be rejected — a stolen or leaked token would be valid forever.
+
+**How identified:**
+Code review of auth middleware. The original comment admitted it: `"we allow slightly stale tokens during local dev for convenience"`.
+
+**Root cause:**
+Local dev shortcut that was never reverted before handoff.
+
+**Fix:**
+Made `ignoreExpiration` conditional on `NODE_ENV === "development"`. In production, tokens expire as intended. In local dev, the convenience bypass is preserved intentionally.
 
