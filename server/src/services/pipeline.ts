@@ -28,7 +28,7 @@ export async function processEvent(event: EventDocument): Promise<void> {
       }
 
       // TODO: implement full rule evaluation engine (e.g. payload field matching, regex on accountId).
-      // TODO: handle failures without dropping entire event processing (per-rule isolation).
+      // DONE: handle failures without dropping entire event processing — per-rule try/catch below.
       const message = `Rule "${rule.name}" matched: ${event.type} $${event.amount} ${event.currency} on ${event.accountId}`;
 
       await NotificationModel.create({
