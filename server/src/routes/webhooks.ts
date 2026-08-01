@@ -1,38 +1,31 @@
 import express, { Router } from "express";
-import { EventModel, EventType } from "../models/Event";
+import { EventModel } from "../models/Event";
 import { processEvent } from "../services/pipeline";
 import { Http } from "../constants";
+import { IncomingWebhookEventSchema } from "../schemas";
 
 const router = Router();
 
 router.use(express.json({ limit: Http.MAX_WEBHOOK_BODY_SIZE }));
 
-interface IncomingWebhookEvent {
-  id?: string;
-  type?: EventType;
-  accountId?: string;
-  amount?: number;
-  currency?: string;
-  createdAt?: string;
-  payload?: Record<string, unknown>;
-}
-
 router.post("/events", async (req, res) => {
-  const event = req.body as IncomingWebhookEvent;
+  const result = IncomingWebhookEventSchema.safeParse(req.body);
 
-  if (!event.id || !event.type || !event.accountId || typeof event.amount !== "number") {
-    res.status(400).json({ error: "invalid event payload" });
+  if (!result.success) {
+    res.status(400).json({ error: "invalid event payload", detail: result.error.flatten() });
     return;
   }
+
+  const event = result.data;
 
   const eventDoc = new EventModel({
     sourceEventId: event.id,
     type: event.type,
     accountId: event.accountId,
     amount: event.amount,
-    currency: event.currency || "USD",
+    currency: event.currency ?? "USD",
     createdAt: event.createdAt ? new Date(event.createdAt) : new Date(),
-    payload: event.payload || {}
+    payload: event.payload ?? {}
   });
 
   try {
