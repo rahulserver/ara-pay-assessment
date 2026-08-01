@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
-import { Pipeline } from "../constants";
 import { EventModel } from "../models/Event";
 import { NotificationModel } from "../models/Notification";
 
@@ -9,7 +8,7 @@ const router = Router();
 router.use(requireAuth);
 
 router.get("/events", async (req, res) => {
-  const limit = Number(req.query.limit || Pipeline.DEFAULT_EVENT_LIMIT);
+  const limit = Number(req.query.limit || 30);
 
   const events = await EventModel.find().sort({ createdAt: -1 }).limit(limit);
 
@@ -17,7 +16,7 @@ router.get("/events", async (req, res) => {
 });
 
 router.get("/", async (req, res) => {
-  const limit = Number(req.query.limit || Pipeline.DEFAULT_NOTIFICATION_LIMIT);
+  const limit = Number(req.query.limit || 50);
 
   const notifications = await NotificationModel.find()
     .sort({ createdAt: -1 })

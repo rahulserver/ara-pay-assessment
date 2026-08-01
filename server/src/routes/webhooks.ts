@@ -1,8 +1,11 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import { EventModel, EventType } from "../models/Event";
 import { processEvent } from "../services/pipeline";
+import { Http } from "../constants";
 
 const router = Router();
+
+router.use(express.json({ limit: Http.MAX_WEBHOOK_BODY_SIZE }));
 
 interface IncomingWebhookEvent {
   id?: string;
