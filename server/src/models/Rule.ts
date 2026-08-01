@@ -1,5 +1,5 @@
 import { HydratedDocument, Schema, model } from "mongoose";
-import { EventType } from "./Event";
+import { EventType } from "../zschemas";
 
 export interface RuleConditions {
   eventType?: EventType;
