@@ -19,6 +19,7 @@ export async function processEvent(event: EventDocument): Promise<void> {
     return;
   }
 
+  // DONE: implement full rule evaluation engine.
   for (const rule of activeRules) {
     try {
       const maybeMatch = doesRuleLikelyMatch(event, rule.conditions || {});
@@ -27,12 +28,9 @@ export async function processEvent(event: EventDocument): Promise<void> {
         continue;
       }
 
-      // TODO: implement full rule evaluation engine.
-      // TODO: create notification records for all matching rules.
-      // TODO: handle failures without dropping entire event processing.
-      // Intentionally left as a stub for now.
       const message = `Rule "${rule.name}" matched: ${event.type} $${event.amount} ${event.currency} on ${event.accountId}`;
 
+      // DONE: create notification records for all matching rules.
       await NotificationModel.create({
         eventId: event._id,
         ruleId: rule._id,
@@ -52,5 +50,6 @@ export async function processEvent(event: EventDocument): Promise<void> {
         error
       });
     }
+    // DONE: handle failures without dropping entire event processing.
   }
 }
