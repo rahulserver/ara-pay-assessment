@@ -3,19 +3,13 @@ import { NotificationModel } from "../models/Notification";
 import { RuleConditions, RuleModel } from "../models/Rule";
 
 function doesRuleMatch(event: EventDocument, conditions: RuleConditions): boolean {
-  if (conditions.eventType && conditions.eventType !== event.type) {
-    return false;
-  }
+  const { eventType, minAmount, accountId } = conditions;
 
-  if (typeof conditions.minAmount === "number" && event.amount < conditions.minAmount) {
-    return false;
-  }
+  const typeMatches = !eventType || eventType === event.type;
+  const amountMatches = minAmount === undefined || event.amount >= minAmount;
+  const accountMatches = !accountId || accountId === event.accountId;
 
-  if (conditions.accountId && conditions.accountId !== event.accountId) {
-    return false;
-  }
-
-  return true;
+  return typeMatches && amountMatches && accountMatches;
 }
 
 export async function processEvent(event: EventDocument): Promise<void> {
