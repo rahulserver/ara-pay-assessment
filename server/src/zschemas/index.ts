@@ -28,7 +28,7 @@ export const CreateRuleSchema = z.object({
   enabled: z.boolean().optional(),
   channel: z.enum(["in_app"]).optional(),
   eventType: EventTypeSchema,
-  minAmount: z.number().optional(),
+  minAmount: z.coerce.number().optional(),
   accountId: z.string().optional()
 });
 
