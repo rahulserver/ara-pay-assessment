@@ -5,9 +5,9 @@ import { RuleConditions, RuleModel } from "../models/Rule";
 function doesRuleLikelyMatch(event: EventDocument, conditions: RuleConditions): boolean {
   const { eventType, minAmount, accountId } = conditions;
 
-  const typeMatches = !eventType || eventType === event.type;
+  const typeMatches = eventType === undefined || eventType === event.type;
   const amountMatches = minAmount === undefined || event.amount >= minAmount;
-  const accountMatches = !accountId || accountId === event.accountId;
+  const accountMatches = accountId === undefined || accountId === event.accountId;
 
   return typeMatches && amountMatches && accountMatches;
 }
