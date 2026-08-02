@@ -40,7 +40,12 @@ router.post("/", asyncHandler(async (req, res) => {
     res.status(201).json(created);
   } catch (error: unknown) {
     if (typeof error === "object" && error !== null && (error as { code?: number }).code === 11000) {
-      res.status(409).json({ error: `A rule named "${body.name}" already exists.` });
+      const keyValue = (error as { keyValue?: Record<string, unknown> }).keyValue ?? {};
+      if ("name" in keyValue) {
+        res.status(409).json({ error: `A rule named "${body.name}" already exists.` });
+      } else {
+        res.status(409).json({ error: "A rule with identical conditions already exists. Change the event type, amount, or account filter." });
+      }
       return;
     }
     throw error;

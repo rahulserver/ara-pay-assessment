@@ -40,5 +40,9 @@ const ruleSchema = new Schema<Rule>(
 );
 
 ruleSchema.index({ "conditions.eventType": 1, enabled: 1 });
+ruleSchema.index(
+  { "conditions.eventType": 1, "conditions.minAmount": 1, "conditions.accountId": 1 },
+  { unique: true, name: "unique_rule_conditions" }
+);
 
 export const RuleModel = model<Rule>("Rule", ruleSchema);
