@@ -4,6 +4,16 @@ _Max two pages — anchored in the implementation._
 
 ---
 
+## Known Limitations
+
+- **Dashboard polling:** The client polls all three API endpoints every 4 seconds via `setInterval`. This keeps the demo feeling live but is inefficient — requests fire even when nothing has changed. The better approach is Server-Sent Events (SSE) or WebSockets so the server pushes updates only when new events or notifications arrive. At scale this would be the first UI change.
+
+- **Notification deduplication:** Multiple rules matching the same event produce multiple notifications. The recommended fix is per-channel dedup — one `in_app` notification per event surfacing all matched rule names — but this is not yet implemented.
+
+- **No token refresh:** JWT tokens expire after 1 hour. The client detects 401s and redirects to login, but there is no refresh token flow. Users must re-authenticate after expiry.
+
+---
+
 ## 1. Event-to-Notification Flow
 
 ```
