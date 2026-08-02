@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Alert,
   Button,
   FormControl,
   FormControlLabel,
@@ -33,6 +34,7 @@ export default function RuleForm({ onCreated }: RuleFormProps) {
   const [draft, setDraft] = useState<RuleDraft>(initialDraft);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleChange = (field: keyof RuleDraft, value: string | boolean) => {
     setFormError(null);
@@ -66,6 +68,8 @@ export default function RuleForm({ onCreated }: RuleFormProps) {
 
       onCreated(created);
       setDraft(initialDraft);
+      setSuccessMessage(`Rule "${created.name}" created successfully.`);
+      setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err) {
       console.error("[RuleForm] failed to save rule", err);
       setFormError(err instanceof Error ? err.message : "Failed to save rule. Please try again.");
@@ -130,6 +134,8 @@ export default function RuleForm({ onCreated }: RuleFormProps) {
               control={<Switch checked={draft.enabled} onChange={(e) => handleChange("enabled", e.target.checked)} />}
               label="Enabled"
             />
+
+            {successMessage && <Alert severity="success">{successMessage}</Alert>}
 
             <Button type="submit" variant="contained" disabled={saving}>
               {saving ? "Saving..." : "Save rule"}
