@@ -33,11 +33,13 @@ const initialDraft: RuleDraft = {
 export default function RuleForm({ onCreated }: RuleFormProps) {
   const [draft, setDraft] = useState<RuleDraft>(initialDraft);
   const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [minAmountError, setMinAmountError] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleChange = (field: keyof RuleDraft, value: string | boolean) => {
-    setFormError(null);
+    setMinAmountError(null);
+    setApiError(null);
     setDraft((current) => ({
       ...current,
       [field]: value
@@ -50,7 +52,7 @@ export default function RuleForm({ onCreated }: RuleFormProps) {
     if (draft.minAmount !== undefined && draft.minAmount !== "") {
       const parsed = Number(draft.minAmount);
       if (isNaN(parsed) || parsed < 0) {
-        setFormError("Minimum amount must be a positive number.");
+        setMinAmountError("Minimum amount must be a positive number.");
         return;
       }
     }
@@ -72,7 +74,7 @@ export default function RuleForm({ onCreated }: RuleFormProps) {
       setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err) {
       console.error("[RuleForm] failed to save rule", err);
-      setFormError(err instanceof Error ? err.message : "Failed to save rule. Please try again.");
+      setApiError(err instanceof Error ? err.message : "Failed to save rule. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -119,8 +121,8 @@ export default function RuleForm({ onCreated }: RuleFormProps) {
               inputProps={{ min: 0 }}
               value={draft.minAmount}
               onChange={(e) => handleChange("minAmount", e.target.value)}
-              error={!!formError}
-              helperText={formError ?? undefined}
+              error={!!minAmountError}
+              helperText={minAmountError ?? undefined}
             />
 
             <TextField
@@ -135,6 +137,7 @@ export default function RuleForm({ onCreated }: RuleFormProps) {
               label="Enabled"
             />
 
+            {apiError && <Alert severity="error">{apiError}</Alert>}
             {successMessage && <Alert severity="success">{successMessage}</Alert>}
 
             <Button type="submit" variant="contained" disabled={saving}>
