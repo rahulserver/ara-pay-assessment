@@ -32,8 +32,10 @@ const initialDraft: RuleDraft = {
 export default function RuleForm({ onCreated }: RuleFormProps) {
   const [draft, setDraft] = useState<RuleDraft>(initialDraft);
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const handleChange = (field: keyof RuleDraft, value: string | boolean) => {
+    setFormError(null);
     setDraft((current) => ({
       ...current,
       [field]: value
@@ -42,6 +44,15 @@ export default function RuleForm({ onCreated }: RuleFormProps) {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    if (draft.minAmount !== undefined && draft.minAmount !== "") {
+      const parsed = Number(draft.minAmount);
+      if (isNaN(parsed) || parsed < 0) {
+        setFormError("Minimum amount must be a positive number.");
+        return;
+      }
+    }
+
     setSaving(true);
 
     try {
@@ -99,8 +110,12 @@ export default function RuleForm({ onCreated }: RuleFormProps) {
             <TextField
               label="Minimum amount"
               placeholder="1000"
+              type="number"
+              inputProps={{ min: 0 }}
               value={draft.minAmount}
               onChange={(e) => handleChange("minAmount", e.target.value)}
+              error={!!formError}
+              helperText={formError ?? undefined}
             />
 
             <TextField
