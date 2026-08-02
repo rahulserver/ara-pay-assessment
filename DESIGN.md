@@ -74,7 +74,7 @@ The cost: if the pipeline fails silently after the response is sent, notificatio
 
 **1. Move pipeline processing to an async worker queue (BullMQ + Redis)**
 
-At ~167 events/second, in-process fire-and-forget pipeline calls stack up on the Node.js event loop and exhaust the MongoDB connection pool. The fix: after `EventModel.save()`, push the event ID onto a BullMQ job queue. A separate worker pool consumes jobs and runs `processEvent`. The HTTP server's only job becomes validate → save → enqueue → respond.
+At ~167 events/second, in-process fire-and-forget pipeline calls accumulate faster than they resolve. Each pipeline call performs two DB operations (rule query + notification write), all competing for the same MongoDB connection pool (default 5 connections). The callbacks queuing on the Node.js event loop also create lag that degrades the HTTP server's ability to handle incoming webhook requests. The fix: after `EventModel.save()`, push the event ID onto a BullMQ job queue. A separate worker pool consumes jobs and runs `processEvent`. The HTTP server's only job becomes validate → save → enqueue → respond.
 
 This gives:
 - Ingestion and processing that scale independently
