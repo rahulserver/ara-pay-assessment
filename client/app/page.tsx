@@ -7,7 +7,7 @@ import EventList from "@/components/EventList";
 import LoginCard from "@/components/LoginCard";
 import NotificationList from "@/components/NotificationList";
 import RuleForm from "@/components/RuleForm";
-import { fetchEvents, fetchNotifications, fetchRules, login } from "@/lib/api";
+import { fetchEvents, fetchNotifications, fetchRules, login, AuthError } from "@/lib/api";
 import { EventRecord, NotificationRecord, RuleRecord } from "@/lib/types";
 
 export default function HomePage() {
@@ -30,6 +30,10 @@ export default function HomePage() {
       setEvents(nextEvents);
       setNotifications(nextNotifications);
       setRules(nextRules);
+    } catch (error) {
+      if (error instanceof AuthError) {
+        setAuthenticated(false);
+      }
     } finally {
       setLoading(false);
     }

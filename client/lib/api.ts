@@ -2,6 +2,14 @@ import { EventRecord, NotificationRecord, RuleDraft, RuleRecord } from "./types"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
+/** Thrown when the server returns 401. Signals the session has expired. */
+export class AuthError extends Error {
+  constructor() {
+    super("Session expired. Please log in again.");
+    this.name = "AuthError";
+  }
+}
+
 function getToken(): string | null {
   if (typeof window === "undefined") {
     return null;
@@ -18,6 +26,14 @@ function setToken(token: string): void {
   window.localStorage.setItem("ara_fullstack_token", token);
 }
 
+export function clearToken(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem("ara_fullstack_token");
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken();
 
@@ -32,6 +48,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      clearToken();
+      throw new AuthError();
+    }
     const body = await response.text();
     throw new Error(body || `Request failed with status ${response.status}`);
   }

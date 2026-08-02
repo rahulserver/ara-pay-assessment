@@ -68,6 +68,7 @@ export default function RuleForm({ onCreated }: RuleFormProps) {
       setDraft(initialDraft);
     } catch (err) {
       console.error("[RuleForm] failed to save rule", err);
+      setFormError(err instanceof Error ? err.message : "Failed to save rule. Please try again.");
     } finally {
       setSaving(false);
     }
