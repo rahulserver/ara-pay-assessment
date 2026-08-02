@@ -2,7 +2,7 @@ import { EventDocument } from "../models/Event";
 import { NotificationModel } from "../models/Notification";
 import { RuleConditions, RuleModel } from "../models/Rule";
 
-function doesRuleLikelyMatch(event: EventDocument, conditions: RuleConditions): boolean {
+export function doesRuleLikelyMatch(event: EventDocument, conditions: RuleConditions): boolean {
   const { eventType, minAmount, accountId } = conditions;
 
   const typeMatches = eventType === undefined || eventType === event.type;
