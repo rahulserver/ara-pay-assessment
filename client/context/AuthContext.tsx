@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useState } from "react";
+import { createContext, useCallback, useEffect, useState } from "react";
 import { login as apiLogin } from "@/lib/api";
 import { clearToken, getToken, setToken } from "@/lib/auth";
 
@@ -15,7 +15,12 @@ export interface AuthContextValue {
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }): React.ReactElement {
-  const [authenticated, setAuthenticated] = useState<boolean>(() => !!getToken());
+  const [authenticated, setAuthenticated] = useState<boolean>(false);
+
+  // Initialize from localStorage after mount only — avoids SSR/client hydration mismatch.
+  useEffect(() => {
+    setAuthenticated(!!getToken());
+  }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     const token = await apiLogin(email, password);
