@@ -7,7 +7,8 @@ import EventList from "@/components/EventList";
 import LoginCard from "@/components/LoginCard";
 import NotificationList from "@/components/NotificationList";
 import RuleForm from "@/components/RuleForm";
-import { fetchEvents, fetchNotifications, fetchRules, login, AuthError } from "@/lib/api";
+import { fetchEvents, fetchNotifications, fetchRules, login } from "@/lib/api";
+import { AuthError } from "@/lib/auth";
 import { EventRecord, NotificationRecord, RuleRecord } from "@/lib/types";
 
 export default function HomePage() {

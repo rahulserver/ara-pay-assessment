@@ -1,14 +1,7 @@
 import { EventRecord, NotificationRecord, RuleDraft, RuleRecord } from "./types";
+import { AuthError, clearToken } from "./auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
-/** Thrown when the server returns 401. Signals the session has expired. */
-export class AuthError extends Error {
-  constructor() {
-    super("Session expired. Please log in again.");
-    this.name = "AuthError";
-  }
-}
 
 function getToken(): string | null {
   if (typeof window === "undefined") {
@@ -24,14 +17,6 @@ function setToken(token: string): void {
   }
 
   window.localStorage.setItem("ara_fullstack_token", token);
-}
-
-export function clearToken(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.removeItem("ara_fullstack_token");
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
