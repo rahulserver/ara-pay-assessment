@@ -23,7 +23,7 @@ interface RuleFormProps {
 
 const initialDraft: RuleDraft = {
   name: "",
-  eventType: "",
+  eventType: "payment_received",
   minAmount: "",
   accountId: "",
   enabled: true
@@ -48,8 +48,8 @@ export default function RuleForm({ onCreated }: RuleFormProps) {
       const created = await saveRule({
         name: draft.name,
         eventType: draft.eventType,
-        minAmount: draft.minAmount,
-        accountId: draft.accountId,
+        minAmount: draft.minAmount || undefined,
+        accountId: draft.accountId || undefined,
         enabled: draft.enabled
       });
 
@@ -89,7 +89,6 @@ export default function RuleForm({ onCreated }: RuleFormProps) {
                 value={draft.eventType}
                 onChange={(e) => handleChange("eventType", e.target.value)}
               >
-                <MenuItem value="">Any event</MenuItem>
                 <MenuItem value="payment_received">payment_received</MenuItem>
                 <MenuItem value="overdue">overdue</MenuItem>
                 <MenuItem value="dispute_raised">dispute_raised</MenuItem>

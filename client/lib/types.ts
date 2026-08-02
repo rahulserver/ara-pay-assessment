@@ -13,9 +13,9 @@ export interface EventRecord {
 
 export interface RuleDraft {
   name: string;
-  eventType: EventType | "";
-  minAmount: string;
-  accountId: string;
+  eventType: EventType;
+  minAmount?: string;
+  accountId?: string;
   enabled: boolean;
 }
 
