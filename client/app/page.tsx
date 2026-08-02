@@ -14,14 +14,12 @@ import { EventRecord, NotificationRecord, RuleRecord } from "@/lib/types";
 
 export default function HomePage() {
   const { authenticated, login, logout } = useAuth();
-  const [loading, setLoading] = useState(true);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [events, setEvents] = useState<EventRecord[]>([]);
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
   const [rules, setRules] = useState<RuleRecord[]>([]);
 
   const refresh = useCallback(async () => {
-    setLoading(true);
-
     try {
       const [nextEvents, nextNotifications, nextRules] = await Promise.all([
         fetchEvents(),
@@ -37,13 +35,13 @@ export default function HomePage() {
         logout();
       }
     } finally {
-      setLoading(false);
+      setInitialLoadDone(true);
     }
   }, [logout]);
 
   useEffect(() => {
     if (!authenticated) {
-      setLoading(false);
+      setInitialLoadDone(false);
       return;
     }
 
@@ -73,7 +71,7 @@ export default function HomePage() {
     return <LoginCard onLogin={handleLogin} />;
   }
 
-  if (loading && events.length === 0 && notifications.length === 0) {
+  if (!initialLoadDone) {
     return (
       <Box sx={{ minHeight: "80vh", display: "grid", placeItems: "center" }}>
         <CircularProgress />
