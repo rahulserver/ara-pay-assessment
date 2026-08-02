@@ -1,23 +1,7 @@
 import { EventRecord, NotificationRecord, RuleDraft, RuleRecord } from "./types";
-import { AuthError, clearToken } from "./auth";
+import { AuthError, clearToken, getToken } from "./auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
-function getToken(): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  return window.localStorage.getItem("ara_fullstack_token");
-}
-
-function setToken(token: string): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem("ara_fullstack_token", token);
-}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken();
@@ -44,13 +28,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export async function login(email: string, password: string): Promise<void> {
+/** Returns the raw token string — caller is responsible for storing it. */
+export async function login(email: string, password: string): Promise<string> {
   const result = await request<{ token: string }>("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password })
   });
 
-  setToken(result.token);
+  return result.token;
 }
 
 export async function fetchEvents(): Promise<EventRecord[]> {

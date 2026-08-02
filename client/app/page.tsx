@@ -7,12 +7,12 @@ import EventList from "@/components/EventList";
 import LoginCard from "@/components/LoginCard";
 import NotificationList from "@/components/NotificationList";
 import RuleForm from "@/components/RuleForm";
-import { fetchEvents, fetchNotifications, fetchRules, login } from "@/lib/api";
-import { AuthError } from "@/lib/auth";
+import { fetchEvents, fetchNotifications, fetchRules } from "@/lib/api";
+import { AuthError, useAuth } from "@/hooks/useAuth";
 import { EventRecord, NotificationRecord, RuleRecord } from "@/lib/types";
 
 export default function HomePage() {
-  const [authenticated, setAuthenticated] = useState(false);
+  const { authenticated, login, logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState<EventRecord[]>([]);
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
@@ -33,24 +33,21 @@ export default function HomePage() {
       setRules(nextRules);
     } catch (error) {
       if (error instanceof AuthError) {
-        setAuthenticated(false);
+        logout();
       }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [logout]);
 
   useEffect(() => {
-    const token = window.localStorage.getItem("ara_fullstack_token");
-
-    if (!token) {
+    if (!authenticated) {
       setLoading(false);
       return;
     }
 
-    setAuthenticated(true);
     refresh();
-  }, [refresh]);
+  }, [authenticated, refresh]);
 
   useEffect(() => {
     if (!authenticated) {
@@ -68,7 +65,6 @@ export default function HomePage() {
 
   const handleLogin = async (email: string, password: string) => {
     await login(email, password);
-    setAuthenticated(true);
     await refresh();
   };
 
