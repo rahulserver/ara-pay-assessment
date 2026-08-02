@@ -1,17 +1,5 @@
 # Design Notes
 
-_Max two pages — anchored in the implementation._
-
----
-
-## Known Limitations
-
-- **Dashboard polling:** The client polls all three API endpoints every 4 seconds via `setInterval`. This keeps the demo feeling live but is inefficient — requests fire even when nothing has changed. The better approach is Server-Sent Events (SSE) or WebSockets so the server pushes updates only when new events or notifications arrive. At scale this would be the first UI change.
-
-- **Notification deduplication:** Multiple rules matching the same event produce multiple notifications. The recommended fix is per-channel dedup — one `in_app` notification per event surfacing all matched rule names — but this is not yet implemented.
-
-- **No token refresh:** JWT tokens expire after 1 hour. The client detects 401s and redirects to login, but there is no refresh token flow. Users must re-authenticate after expiry.
-
 ---
 
 ## 1. Event-to-Notification Flow
@@ -100,5 +88,10 @@ Every pipeline execution currently runs `RuleModel.find({ enabled: true })` — 
 
 Fix: cache the full active rule array in Redis with a short TTL (e.g. 30s). Invalidate the cache on any rule create, update, or toggle. The pipeline reads from Redis first, falls back to MongoDB on cache miss. Since BullMQ already requires Redis (change #1), this comes at no additional infrastructure cost.
 
-
 ---
+
+## 6. Known Limitations
+
+- **Dashboard polling:** Client polls all three API endpoints every 4 seconds via `setInterval`. Requests fire even when nothing has changed. SSE or WebSockets would be more efficient — server pushes updates only on new events or notifications.
+- **Notification deduplication:** Multiple rules matching the same event produce multiple notifications. Recommended fix: per-channel dedup — one `in_app` notification per event surfacing all matched rule names.
+- **No token refresh:** JWT tokens expire after 1 hour. Client detects 401s and redirects to login, but there is no refresh token flow.
