@@ -55,3 +55,40 @@ The pipeline iterates rules inside a `for` loop where each rule has its own `try
 `processEvent` is intentionally not awaited. The event is always persisted before the pipeline starts. If the pipeline fails entirely (e.g. DB connection drops mid-processing), the event exists in MongoDB but notifications may be missing. This is an acceptable tradeoff at current scale — the webhook sender's SLA is met, and missing notifications can be backfilled. At higher volume, a durable queue (see §5) would provide retry guarantees.
 
 ---
+
+## 4. Alternative Considered: Awaiting the Pipeline Synchronously
+
+The simplest alternative was to `await processEvent(eventDoc)` before sending the HTTP response — one linear flow, easier to reason about, errors surface immediately.
+
+**Why it was rejected:**
+
+Webhook senders (payment processors, financial platforms) have strict delivery timeouts — typically 5–30 seconds before they mark delivery as failed and retry. Awaiting the pipeline adds the full cost of a MongoDB rule query plus N notification writes to every webhook response time. Under load, a slow DB or large rule set could push responses past sender timeouts, triggering retries that compound the load.
+
+The event is already durably persisted before the pipeline starts. The sender's only concern is receipt acknowledgment, not notification delivery. Decoupling these responsibilities keeps the ingestion path fast and resilient to pipeline slowdowns.
+
+The cost: if the pipeline fails silently after the response is sent, notifications may be missing with no retry. This is the primary motivation for a queue-backed worker at scale (§5).
+
+---
+
+## 5. First Two Changes at 10,000 Events/Minute
+
+**1. Move pipeline processing to an async worker queue (BullMQ + Redis)**
+
+At ~167 events/second, in-process fire-and-forget pipeline calls stack up on the Node.js event loop and exhaust the MongoDB connection pool. The fix: after `EventModel.save()`, push the event ID onto a BullMQ job queue. A separate worker pool consumes jobs and runs `processEvent`. The HTTP server's only job becomes validate → save → enqueue → respond.
+
+This gives:
+- Ingestion and processing that scale independently
+- Durable job storage — jobs survive process crashes (Redis persistence)
+- Built-in retry with backoff for failed notification writes
+- Worker pool can be scaled horizontally without touching the API server
+
+BullMQ uses Redis Sorted Sets and Lists for job storage — not Pub/Sub — so jobs are never silently dropped.
+
+**2. Cache the active rule set in Redis**
+
+Every pipeline execution currently runs `RuleModel.find({ enabled: true })` — a full DB scan on every event. Rules change rarely relative to event volume. At 10k events/minute this is 10k unnecessary DB queries/minute loading the same data.
+
+Fix: cache the full active rule array in Redis with a short TTL (e.g. 30s). Invalidate the cache on any rule create, update, or toggle. The pipeline reads from Redis first, falls back to MongoDB on cache miss. Since BullMQ already requires Redis (change #1), this comes at no additional infrastructure cost.
+
+
+---
