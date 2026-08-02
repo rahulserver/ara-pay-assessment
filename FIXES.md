@@ -142,10 +142,47 @@ Created `server/src/utils/asyncHandler.ts` — a wrapper that catches rejected p
 
 ---
 
+## [BUG] Client saveRule silently swallowed all rule creation errors
+
+**File:** `client/lib/api.ts`, `client/components/RuleForm.tsx`
+
+**What was broken:**
+`saveRule` had a try/catch that returned `null` on any error with the comment `// API mismatch is noisy in current backend, suppressing for now.` The `RuleForm` then checked `if (created)` — so a failed save was completely invisible to the user. No error, no feedback, form just didn't reset.
+
+**How identified:**
+Code review. The comment explicitly admitted the suppression.
+
+**Root cause:**
+The underlying API mismatch (snake_case vs camelCase) made rule creation always fail, so the developer suppressed errors as a workaround instead of fixing the root cause.
+
+**Fix:**
+Removed the try/catch suppression. `saveRule` now returns `Promise<RuleRecord>` and throws on failure. `RuleForm.handleSubmit` updated to use `try/catch/finally` — success resets the form, failure logs to console, `setSaving(false)` always runs in `finally`.
+
+---
+
+## [HARDENING] Deprecated TypeScript compiler options
+
+**Files:** `server/tsconfig.json`, `client/tsconfig.json`
+
+**What was broken:**
+- Server: `"moduleResolution": "Node"` (deprecated alias for `node10`, stops working in TypeScript 7.0)
+- Client: `"target": "es5"` (deprecated, stops working in TypeScript 7.0)
+
+**How identified:**
+TypeScript compiler warnings surfaced during code review.
+
+**Root cause:**
+Config written against older TypeScript defaults, never updated.
+
+**Fix:**
+- Server: upgraded to `"module": "Node16"`, `"moduleResolution": "Node16"` — correct paired setting for a modern Node.js CommonJS project
+- Client: upgraded to `"target": "ES2017"` — appropriate for Next.js which handles browser compat via SWC; `noEmit: true` means tsc output target has no effect on the bundle anyway
+
+---
+
 ## Deliberately left out of scope
 
 - **CORS open to all origins** (`app.use(cors())` with no whitelist): Acceptable for a local/internal tool. Would need an origin allowlist before public deployment.
 - **No rate limiting on webhook endpoint**: No protection against event flooding. A queue-backed pipeline (see DESIGN.md) is the right fix at scale, not a request rate limiter.
 - **No token refresh mechanism**: Client re-authenticates after 1h expiry. Acceptable for a dashboard with a single user; would need refresh tokens for production.
-- **Client `saveRule` error suppression**: The comment `// API mismatch is noisy in current backend, suppressing for now` was left in the client — the underlying API mismatch is fixed on the server, but the client-side error handling still needs to be cleaned up (tracked separately).
 
