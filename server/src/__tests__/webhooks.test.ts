@@ -2,6 +2,8 @@ import request from "supertest";
 import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { buildApp } from "../app";
+import { NotificationModel } from "../models/Notification";
+import { RuleModel } from "../models/Rule";
 
 let mongod: MongoMemoryServer;
 const app = buildApp();
@@ -59,5 +61,25 @@ describe("POST /webhooks/events", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.duplicate).toBe(true);
+  });
+
+  it("creates a notification when a matching rule exists", async () => {
+    await RuleModel.create({
+      name: "High value",
+      enabled: true,
+      channel: "in_app",
+      conditions: { eventType: "payment_received", minAmount: 1000 }
+    });
+
+    await request(app)
+      .post("/webhooks/events")
+      .send({ id: "evt_pipeline", type: "payment_received", accountId: "acc_001", amount: 5000 });
+
+    // Pipeline is fire-and-forget — wait briefly for it to complete
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    const notifications = await NotificationModel.find({});
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0].message).toContain("High value");
   });
 });

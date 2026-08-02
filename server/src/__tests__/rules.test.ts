@@ -6,7 +6,7 @@ import { buildApp } from "../app";
 
 let mongod: MongoMemoryServer;
 const app = buildApp();
-const TEST_SECRET = "test-secret";
+const TEST_SECRET = "dev-secret"; // matches env.ts fallback — no JWT_SECRET env var set in tests
 
 // Generate a valid token for authenticated requests
 const token = jwt.sign({ email: "test@example.com" }, TEST_SECRET, { subject: "user_1" });
@@ -14,8 +14,6 @@ const token = jwt.sign({ email: "test@example.com" }, TEST_SECRET, { subject: "u
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   await mongoose.connect(mongod.getUri());
-  // Override JWT secret for tests
-  process.env.JWT_SECRET = TEST_SECRET;
 });
 
 afterAll(async () => {
