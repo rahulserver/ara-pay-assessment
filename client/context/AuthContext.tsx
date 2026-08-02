@@ -1,18 +1,18 @@
 "use client";
 
-import { createContext, useCallback, useContext, useState } from "react";
+import { createContext, useCallback, useState } from "react";
 import { login as apiLogin } from "@/lib/api";
-import { AuthError, clearToken, getToken, setToken } from "@/lib/auth";
+import { clearToken, getToken, setToken } from "@/lib/auth";
 
-export { AuthError };
+export { AuthError } from "@/lib/auth";
 
-interface AuthContextValue {
+export interface AuthContextValue {
   authenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }): React.ReactElement {
   const [authenticated, setAuthenticated] = useState<boolean>(() => !!getToken());
@@ -33,12 +33,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return ctx;
 }

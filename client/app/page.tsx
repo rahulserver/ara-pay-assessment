@@ -8,7 +8,8 @@ import LoginCard from "@/components/LoginCard";
 import NotificationList from "@/components/NotificationList";
 import RuleForm from "@/components/RuleForm";
 import { fetchEvents, fetchNotifications, fetchRules } from "@/lib/api";
-import { AuthError, useAuth } from "@/context/AuthContext";
+import { AuthError } from "@/context/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { EventRecord, NotificationRecord, RuleRecord } from "@/lib/types";
 
 export default function HomePage() {
