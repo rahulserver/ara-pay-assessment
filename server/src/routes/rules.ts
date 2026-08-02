@@ -24,19 +24,27 @@ router.post("/", asyncHandler(async (req, res) => {
 
   const body = result.data;
 
-  const created = await RuleModel.create({
-    name: body.name,
-    description: body.description,
-    enabled: body.enabled ?? true,
-    channel: body.channel ?? "in_app",
-    conditions: {
-      eventType: body.eventType,
-      minAmount: body.minAmount,
-      accountId: body.accountId
-    }
-  });
+  try {
+    const created = await RuleModel.create({
+      name: body.name,
+      description: body.description,
+      enabled: body.enabled ?? true,
+      channel: body.channel ?? "in_app",
+      conditions: {
+        eventType: body.eventType,
+        minAmount: body.minAmount,
+        accountId: body.accountId
+      }
+    });
 
-  res.status(201).json(created);
+    res.status(201).json(created);
+  } catch (error: unknown) {
+    if (typeof error === "object" && error !== null && (error as { code?: number }).code === 11000) {
+      res.status(409).json({ error: `A rule named "${body.name}" already exists.` });
+      return;
+    }
+    throw error;
+  }
 }));
 
 export default router;

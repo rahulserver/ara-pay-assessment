@@ -21,7 +21,7 @@ export type RuleDocument = HydratedDocument<Rule>;
 
 const ruleSchema = new Schema<Rule>(
   {
-    name: { type: String, required: true, trim: true },
+    name: { type: String, required: true, trim: true, unique: true },
     description: { type: String },
     enabled: { type: Boolean, default: true },
     channel: { type: String, default: "in_app", enum: ["in_app"] },
