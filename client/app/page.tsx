@@ -89,7 +89,7 @@ export default function HomePage() {
                 Webhook Notifications Dashboard
               </Typography>
               <Typography variant="body2" color="text.secondary" mt={0.5}>
-                {events.length} events · {notifications.length} notifications · {rules.length} rules
+                {events.length} events · {notifications.length} notifications · {rules.length} rule{rules.length !== 1 ? "s" : ""}
               </Typography>
             </Box>
             <IconButton onClick={() => refresh()}>
