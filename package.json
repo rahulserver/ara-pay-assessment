@@ -11,6 +11,7 @@
     "dev": "concurrently \"npm run dev --workspace server\" \"npm run dev --workspace client\"",
     "dev:sim": "npm run dev --workspace simulator",
     "build": "npm run build --workspace server && npm run build --workspace client",
+    "start": "concurrently \"npm run start --workspace server\" \"npm run start --workspace client\"",
     "lint": "npm run lint --workspace server && npm run lint --workspace client",
     "format": "prettier --write \"**/*.{ts,tsx,js,json}\" --ignore-path .prettierignore",
     "prepare": "husky"
