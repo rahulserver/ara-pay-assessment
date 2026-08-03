@@ -10,13 +10,35 @@
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace server\" \"npm run dev --workspace client\"",
     "dev:sim": "npm run dev --workspace simulator",
-    "build": "npm run build --workspace server && npm run build --workspace client"
+    "build": "npm run build --workspace server && npm run build --workspace client",
+    "lint": "npm run lint --workspace server && npm run lint --workspace client",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json}\" --ignore-path .prettierignore",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "server/src/**/*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "client/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "**/*.{json,md}": [
+      "prettier --write"
+    ]
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.3.0",
+    "prettier": "^3.9.6"
   },
   "allowScripts": {
     "esbuild@0.27.3": true,
-    "fsevents@2.3.3": true
+    "fsevents@2.3.3": true,
+    "mongodb-memory-server@11.2.0": true,
+    "unrs-resolver@1.12.2": true
   }
 }

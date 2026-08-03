@@ -1,0 +1,15 @@
+#!/bin/sh
+# Run linter + tests before push
+
+echo "Running ESLint..."
+npm run lint --workspace server
+npm run lint --workspace client
+
+echo "Running Prettier check..."
+node_modules/.bin/prettier --check "server/src/**/*.ts" "client/**/*.{ts,tsx}" --ignore-path .prettierignore
+
+echo "Running server tests..."
+npm run test --workspace server
+
+echo "Running client tests..."
+npm run test --workspace client

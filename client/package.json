@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start -p 3001",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint '**/*.{ts,tsx}'",
+    "lint:fix": "eslint '**/*.{ts,tsx}' --fix"
   },
   "dependencies": {
     "@emotion/react": "^11.11.4",
@@ -25,8 +27,11 @@
     "@types/node": "^20.14.12",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.65.0",
+    "@typescript-eslint/parser": "^8.65.0",
     "@vitejs/plugin-react": "^6.0.5",
     "@vitest/coverage-v8": "^4.1.10",
+    "eslint-config-prettier": "^10.1.8",
     "jsdom": "^30.0.1",
     "typescript": "^5.5.4",
     "vitest": "^4.1.10"
