@@ -101,10 +101,13 @@ npm run test:coverage --workspace client         # with coverage report (thresho
 Requires server (`localhost:4000`) and client (`localhost:3001`) to be running.
 
 ```bash
-npm run e2e    # 13 tests across auth, rule management, webhook pipeline, notification flow
+npx playwright install chromium   # one-time setup — downloads browser binary
+npm run e2e                        # 13 tests across auth, rule management, webhook pipeline, notification flow
+npm run e2e:headed                 # same tests with browser window visible
+npm run e2e:report                 # open HTML report with screenshots + traces (after a run)
 ```
 
-MongoDB is cleared automatically before each run via `e2e/global-setup.ts`. Chromium is used by default — install it once with `npx playwright install chromium`.
+MongoDB is cleared automatically before each run via `e2e/global-setup.ts`.
 
 Covered flows:
 
