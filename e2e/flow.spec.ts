@@ -3,55 +3,102 @@ import { test, expect } from "@playwright/test";
 const API_URL = "http://localhost:4000";
 const APP_URL = "http://localhost:3001";
 
-test.describe("Webhook notification flow", () => {
-  test("login → create rule → fire webhook → notification appears on dashboard", async ({
-    page
-  }) => {
-    // 1. Login
+// Helper: log in and return to dashboard
+async function loginAs(page: import("@playwright/test").Page, email: string, password: string) {
+  await page.goto(APP_URL);
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill(password);
+  await page.getByRole("button", { name: /sign in/i }).click();
+  await expect(page.getByText("Webhook Notifications Dashboard")).toBeVisible();
+}
+
+// Helper: fire a webhook event via API
+async function fireEvent(
+  page: import("@playwright/test").Page,
+  overrides: Record<string, unknown> = {}
+) {
+  return page.request.post(`${API_URL}/webhooks/events`, {
+    data: {
+      id: `e2e_evt_${Date.now()}_${Math.random()}`,
+      type: "payment_received",
+      accountId: "acc_e2e",
+      amount: 1500,
+      currency: "USD",
+      ...overrides
+    }
+  });
+}
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+test.describe("Authentication", () => {
+  test("shows login screen when not authenticated", async ({ page }) => {
     await page.goto(APP_URL);
     await expect(page.getByText("Sign in to Dashboard")).toBeVisible();
-
-    await page.getByLabel("Email").fill("owner@ara-research.dev");
-    await page.getByLabel("Password").fill("password123");
-    await page.getByRole("button", { name: /sign in/i }).click();
-
-    await expect(page.getByText("Webhook Notifications Dashboard")).toBeVisible();
-
-    // 2. Create a rule
-    await page.getByLabel("Name").fill("E2E Payment Alert");
-    // eventType defaults to payment_received — no change needed
-    await page.getByRole("button", { name: /save rule/i }).click();
-
-    // Form resets on success — name field goes empty. More reliable than the auto-dismissing toast.
-    await expect(page.getByLabel("Name")).toHaveValue("", { timeout: 5000 });
-
-    // 3. Fire a webhook event directly via API
-    const webhookRes = await page.request.post(`${API_URL}/webhooks/events`, {
-      data: {
-        id: `e2e_evt_${Date.now()}`,
-        type: "payment_received",
-        accountId: "acc_e2e",
-        amount: 1500,
-        currency: "USD"
-      }
-    });
-    expect(webhookRes.status()).toBe(200);
-
-    // 4. Wait for notification to appear (dashboard polls every 4s)
-    await expect(
-      page.getByText(/E2E Payment Alert.*matched/i)
-    ).toBeVisible({ timeout: 10000 });
   });
 
+  test("login fails with wrong password", async ({ page }) => {
+    await page.goto(APP_URL);
+    await page.getByLabel("Email").fill("owner@ara-research.dev");
+    await page.getByLabel("Password").fill("wrongpassword");
+    await page.getByRole("button", { name: /sign in/i }).click();
+    await expect(page.getByText(/invalid credentials/i)).toBeVisible();
+  });
+
+  test("login succeeds with valid credentials", async ({ page }) => {
+    await loginAs(page, "owner@ara-research.dev", "password123");
+  });
+});
+
+// ─── Rules ───────────────────────────────────────────────────────────────────
+
+test.describe("Rule management", () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, "owner@ara-research.dev", "password123");
+  });
+
+  test("creates a rule and resets the form", async ({ page }) => {
+    await page.getByLabel("Name").fill("Test Rule");
+    await page.getByRole("button", { name: /save rule/i }).click();
+    await expect(page.getByLabel("Name")).toHaveValue("", { timeout: 5000 });
+  });
+
+  test("shows error for duplicate rule name", async ({ page }) => {
+    await page.getByLabel("Name").fill("Duplicate Rule");
+    await page.getByRole("button", { name: /save rule/i }).click();
+    await expect(page.getByLabel("Name")).toHaveValue("", { timeout: 5000 });
+
+    await page.getByLabel("Name").fill("Duplicate Rule");
+    await page.getByRole("button", { name: /save rule/i }).click();
+    await expect(page.getByText(/already exists/i)).toBeVisible();
+  });
+
+  test("shows validation error for negative minimum amount", async ({ page }) => {
+    await page.getByLabel("Name").fill("Bad Amount Rule");
+    await page.getByLabel(/minimum amount/i).fill("-100");
+    await page.getByRole("button", { name: /save rule/i }).click();
+    await expect(page.getByText(/positive number/i)).toBeVisible();
+  });
+
+  test("rule count increments after creation", async ({ page }) => {
+    const headerText = page.getByText(/\d+ rules?/);
+    const before = await headerText.textContent();
+    const beforeCount = parseInt(before?.match(/(\d+) rule/)?.[1] ?? "0");
+
+    await page.getByLabel("Name").fill("Count Test Rule");
+    await page.getByRole("button", { name: /save rule/i }).click();
+    await expect(page.getByLabel("Name")).toHaveValue("", { timeout: 5000 });
+
+    await expect(page.getByText(`${beforeCount + 1} rule`)).toBeVisible();
+  });
+});
+
+// ─── Webhook + Pipeline ──────────────────────────────────────────────────────
+
+test.describe("Webhook event pipeline", () => {
   test("duplicate webhook event is handled idempotently", async ({ page }) => {
     const eventId = `e2e_dup_${Date.now()}`;
-    const payload = {
-      id: eventId,
-      type: "overdue",
-      accountId: "acc_e2e_dup",
-      amount: 200,
-      currency: "USD"
-    };
+    const payload = { id: eventId, type: "overdue", accountId: "acc_e2e_dup", amount: 200 };
 
     const first = await page.request.post(`${API_URL}/webhooks/events`, { data: payload });
     expect(first.status()).toBe(200);
@@ -61,4 +108,91 @@ test.describe("Webhook notification flow", () => {
     expect(second.status()).toBe(200);
     expect((await second.json()).duplicate).toBe(true);
   });
+
+  test("invalid event payload returns 400", async ({ page }) => {
+    const res = await page.request.post(`${API_URL}/webhooks/events`, {
+      data: { id: "bad_evt", type: "unknown_type", accountId: "acc_1" }
+    });
+    expect(res.status()).toBe(400);
+  });
+
+  test("event without a matching rule creates no notification", async ({ page }) => {
+    await loginAs(page, "owner@ara-research.dev", "password123");
+
+    // fire event — no rules exist (DB was cleared)
+    await fireEvent(page, { id: `e2e_nomatch_${Date.now()}` });
+
+    // wait one poll cycle then assert no notifications
+    await page.waitForTimeout(5000);
+    await expect(page.getByText(/no notifications yet/i)).toBeVisible();
+  });
 });
+
+// ─── Full E2E Flow ───────────────────────────────────────────────────────────
+
+test.describe("Full notification flow", () => {
+  test("login → create rule → fire webhook → notification appears on dashboard", async ({
+    page
+  }) => {
+    await loginAs(page, "owner@ara-research.dev", "password123");
+
+    // Create rule
+    await page.getByLabel("Name").fill("E2E Payment Alert");
+    await page.getByRole("button", { name: /save rule/i }).click();
+    await expect(page.getByLabel("Name")).toHaveValue("", { timeout: 5000 });
+
+    // Fire webhook
+    const res = await fireEvent(page);
+    expect(res.status()).toBe(200);
+
+    // Assert notification appears within one poll cycle
+    await expect(page.getByText(/E2E Payment Alert.*matched/i)).toBeVisible({ timeout: 10000 });
+  });
+
+  test("catch-all rule fires for any matching eventType", async ({ page }) => {
+    await loginAs(page, "owner@ara-research.dev", "password123");
+
+    await page.getByLabel("Name").fill("Catch-All Payment Rule");
+    await page.getByRole("button", { name: /save rule/i }).click();
+    await expect(page.getByLabel("Name")).toHaveValue("", { timeout: 5000 });
+
+    // Fire with different accountId — catch-all should still match
+    const res = await fireEvent(page, { id: `e2e_catchall_${Date.now()}`, accountId: "acc_other" });
+    expect(res.status()).toBe(200);
+
+    await expect(
+      page.getByText(/Catch-All Payment Rule.*matched/i)
+    ).toBeVisible({ timeout: 10000 });
+  });
+
+  test("specific rule suppresses catch-all (specificity)", async ({ page }) => {
+    await loginAs(page, "owner@ara-research.dev", "password123");
+
+    // Create catch-all rule (score 0)
+    await page.getByLabel("Name").fill("Generic Payment Rule");
+    await page.getByRole("button", { name: /save rule/i }).click();
+    await expect(page.getByLabel("Name")).toHaveValue("", { timeout: 5000 });
+
+    // Create specific rule (score 1 — with accountId)
+    await page.getByLabel("Name").fill("Specific Account Rule");
+    await page.getByLabel(/account id/i).fill("acc_specific");
+    await page.getByRole("button", { name: /save rule/i }).click();
+    await expect(page.getByLabel("Name")).toHaveValue("", { timeout: 5000 });
+
+    // Fire event for acc_specific
+    const res = await fireEvent(page, {
+      id: `e2e_specific_${Date.now()}`,
+      accountId: "acc_specific"
+    });
+    expect(res.status()).toBe(200);
+
+    // Specific rule fires
+    await expect(page.getByText(/Specific Account Rule.*matched/i)).toBeVisible({
+      timeout: 10000
+    });
+
+    // Generic rule suppressed — only 1 notification
+    await expect(page.getByText(/Generic Payment Rule.*matched/i)).not.toBeVisible();
+  });
+});
+
