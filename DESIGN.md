@@ -16,8 +16,10 @@
 [Load enabled Rules from DB]
         ↓
 [doesRuleLikelyMatch() per rule]
-        ↓ match
-[NotificationModel.create()]  ← one Notification document per matching rule
+        ↓
+[Score rules by specificity — most specific win(s)]
+        ↓ match at highest score
+[NotificationModel.create()]  ← one Notification per highest-scoring rule
         ↓
 [Dashboard polls /notifications + /events + /rules every 4s]
 ```
@@ -105,5 +107,4 @@ Fix: cache the full active rule array in Redis with a short TTL (e.g. 30s). Inva
 ## 6. Known Limitations
 
 - **Dashboard polling:** Client polls all three API endpoints every 4 seconds via `setInterval`. Requests fire even when nothing has changed. SSE or WebSockets would be more efficient — server pushes updates only on new events or notifications.
-- **Notification deduplication:** Multiple rules matching the same event produce multiple notifications. Recommended fix: per-channel dedup — one `in_app` notification per event surfacing all matched rule names.
 - **No token refresh:** JWT tokens expire after 1 hour. Client detects 401s and redirects to login, but there is no refresh token flow.
