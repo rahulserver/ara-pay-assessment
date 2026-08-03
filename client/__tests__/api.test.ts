@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { AuthError, clearToken, setToken } from "../lib/auth";
+import { AuthError, setToken } from "../lib/auth";
 
 // Mock fetch globally
 const mockFetch = vi.fn();
@@ -39,19 +39,40 @@ describe("request — 401 handling", () => {
 });
 
 describe("login", () => {
-  it("stores token on successful login", async () => {
+  it("returns token string on successful login", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ token: "new-token-123" })
     });
 
     const { login } = await import("../lib/api");
-    await login("user@example.com", "password");
-
-    // The returned token is handled by the caller (useAuth hook)
+    const token = await login("user@example.com", "password");
+    expect(token).toBe("new-token-123");
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/auth/login"),
       expect.objectContaining({ method: "POST" })
     );
+  });
+
+  it("throws plain Error (not AuthError) on 401 — wrong credentials", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      text: async () => "Unauthorized"
+    });
+
+    const { login } = await import("../lib/api");
+    const { AuthError } = await import("../lib/auth");
+
+    let thrown: unknown;
+    try {
+      await login("user@example.com", "wrongpass");
+    } catch (e) {
+      thrown = e;
+    }
+
+    expect(thrown).toBeInstanceOf(Error);
+    expect(thrown).not.toBeInstanceOf(AuthError);
+    expect((thrown as Error).message).toBe("Invalid credentials");
   });
 });
