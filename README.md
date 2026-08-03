@@ -95,3 +95,21 @@ npm run test:coverage --workspace server         # with coverage report (thresho
 npm run test --workspace client                  # 23 tests
 npm run test:coverage --workspace client         # with coverage report (threshold: 70%)
 ```
+
+**E2E tests (Playwright)**
+
+Requires server (`localhost:4000`) and client (`localhost:3001`) to be running.
+
+```bash
+npm run e2e    # 13 tests across auth, rule management, webhook pipeline, notification flow
+```
+
+MongoDB is cleared automatically before each run via `e2e/global-setup.ts`. Chromium is used by default — install it once with `npx playwright install chromium`.
+
+Covered flows:
+
+- Login (valid credentials, wrong password, unauthenticated redirect)
+- Rule creation (success, duplicate name error, duplicate conditions error, form validation)
+- Webhook idempotency (duplicate event returns `duplicate: true`)
+- Notification pipeline (rule match → notification appears on dashboard)
+- Specificity logic (specific rule suppresses catch-all, both fire on equal-score tie)
