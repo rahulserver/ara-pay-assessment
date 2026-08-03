@@ -63,6 +63,8 @@ export default function RuleForm({ onCreated }: RuleFormProps) {
       const created = await saveRule({
         name: draft.name,
         eventType: draft.eventType,
+        // Omit optional fields entirely when not set — JSON.stringify skips undefined keys,
+        // so the server receives no field rather than null/empty.
         // || not ?? — we want empty string "" to become undefined (omitted from payload).
         // ?? would pass "" through, which the server coerces to 0 (Number("") === 0),
         // making minAmount=0 match every event.
