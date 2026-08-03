@@ -63,6 +63,9 @@ export default function RuleForm({ onCreated }: RuleFormProps) {
       const created = await saveRule({
         name: draft.name,
         eventType: draft.eventType,
+        // || not ?? — we want empty string "" to become undefined (omitted from payload).
+        // ?? would pass "" through, which the server coerces to 0 (Number("") === 0),
+        // making minAmount=0 match every event.
         minAmount: draft.minAmount || undefined,
         accountId: draft.accountId || undefined,
         enabled: draft.enabled
