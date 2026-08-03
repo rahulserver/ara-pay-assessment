@@ -7,6 +7,11 @@ import {
   IconButton,
   Paper,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
   Tooltip,
   Typography
 } from "@mui/material";
@@ -100,10 +105,69 @@ export default function HomePage() {
               <Typography variant="body2" color="text.secondary" mt={0.5}>
                 {events.length} events · {notifications.length} notifications ·{" "}
                 <Tooltip
-                  title={
-                    rules.length === 0 ? "No rules configured" : rules.map((r) => r.name).join(", ")
-                  }
                   arrow
+                  title={
+                    rules.length === 0 ? (
+                      <Typography variant="caption" sx={{ p: 1, display: "block" }}>
+                        No rules configured yet
+                      </Typography>
+                    ) : (
+                      <Table size="small" sx={{ minWidth: 340 }}>
+                        <TableHead>
+                          <TableRow>
+                            {["Name", "Event type", "Min $", "Account", "On"].map((h) => (
+                              <TableCell
+                                key={h}
+                                sx={{
+                                  color: "text.secondary",
+                                  fontSize: 11,
+                                  py: 0.5,
+                                  px: 1,
+                                  whiteSpace: "nowrap",
+                                  fontWeight: 600
+                                }}
+                              >
+                                {h}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {rules.map((r) => (
+                            <TableRow key={r._id}>
+                              <TableCell sx={{ fontSize: 12, py: 0.5, px: 1 }}>{r.name}</TableCell>
+                              <TableCell sx={{ fontSize: 12, py: 0.5, px: 1 }}>
+                                {r.conditions.eventType ?? "—"}
+                              </TableCell>
+                              <TableCell sx={{ fontSize: 12, py: 0.5, px: 1 }}>
+                                {r.conditions.minAmount ?? "—"}
+                              </TableCell>
+                              <TableCell sx={{ fontSize: 12, py: 0.5, px: 1 }}>
+                                {r.conditions.accountId ?? "—"}
+                              </TableCell>
+                              <TableCell sx={{ fontSize: 12, py: 0.5, px: 1 }}>
+                                {r.enabled ? "✓" : "✗"}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )
+                  }
+                  componentsProps={{
+                    tooltip: {
+                      sx: {
+                        bgcolor: "background.paper",
+                        color: "text.primary",
+                        border: "1px solid",
+                        borderColor: "divider",
+                        boxShadow: 3,
+                        p: 1.5,
+                        maxWidth: 480
+                      }
+                    },
+                    arrow: { sx: { color: "background.paper" } }
+                  }}
                 >
                   <Box
                     component="span"
