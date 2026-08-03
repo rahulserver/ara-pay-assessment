@@ -8,24 +8,30 @@ const router = Router();
 
 router.use(requireAuth);
 
-router.get("/events", asyncHandler(async (req, res) => {
-  const limit = Number(req.query.limit || 30);
+router.get(
+  "/events",
+  asyncHandler(async (req, res) => {
+    const limit = Number(req.query.limit || 30);
 
-  const events = await EventModel.find().sort({ createdAt: -1 }).limit(limit);
+    const events = await EventModel.find().sort({ createdAt: -1 }).limit(limit);
 
-  res.json(events);
-}));
+    res.json(events);
+  })
+);
 
-router.get("/", asyncHandler(async (req, res) => {
-  const limit = Number(req.query.limit || 50);
+router.get(
+  "/",
+  asyncHandler(async (req, res) => {
+    const limit = Number(req.query.limit || 50);
 
-  const notifications = await NotificationModel.find()
-    .sort({ createdAt: -1 })
-    .limit(limit)
-    .populate("eventId")
-    .populate("ruleId");
+    const notifications = await NotificationModel.find()
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .populate("eventId")
+      .populate("ruleId");
 
-  res.json(notifications);
-}));
+    res.json(notifications);
+  })
+);
 
 export default router;

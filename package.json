@@ -18,11 +18,11 @@
   },
   "lint-staged": {
     "server/src/**/*.ts": [
-      "eslint --fix",
+      "eslint --fix --config server/eslint.config.mjs",
       "prettier --write"
     ],
     "client/**/*.{ts,tsx}": [
-      "eslint --fix",
+      "eslint --fix --config client/eslint.config.mjs",
       "prettier --write"
     ],
     "**/*.{json,md}": [

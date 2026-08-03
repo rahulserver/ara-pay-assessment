@@ -1,15 +1,13 @@
 #!/bin/sh
-# Auto-fix lint and formatting, then run tests before push
+# Full quality gate before push — lint + format check + tests on ALL files
+# Rejects push if any step fails. Run 'npm run format' locally to fix formatting.
 
-echo "Running ESLint with --fix..."
-npm run lint --workspace server -- --fix || true
-npm run lint --workspace client -- --fix || true
+echo "Running ESLint..."
+npm run lint --workspace server
+npm run lint --workspace client
 
-echo "Running Prettier --write..."
-node_modules/.bin/prettier --write "server/src/**/*.ts" "client/**/*.{ts,tsx}" --ignore-path .prettierignore
-
-# Restage any files that were auto-fixed
-git add -u
+echo "Checking Prettier formatting..."
+node_modules/.bin/prettier --check "server/src/**/*.ts" "client/**/*.{ts,tsx}" --ignore-path .prettierignore
 
 echo "Running server tests..."
 npm run test --workspace server

@@ -2,15 +2,17 @@ import { doesRuleLikelyMatch } from "../services/pipeline";
 import { EventDocument } from "../models/Event";
 import { RuleConditions } from "../models/Rule";
 
-function makeEvent(overrides: Partial<{
-  type: string;
-  amount: number;
-  accountId: string;
-}>): EventDocument {
+function makeEvent(
+  overrides: Partial<{
+    type: string;
+    amount: number;
+    accountId: string;
+  }>
+): EventDocument {
   return {
     type: overrides.type ?? "payment_received",
     amount: overrides.amount ?? 1000,
-    accountId: overrides.accountId ?? "acc_001",
+    accountId: overrides.accountId ?? "acc_001"
   } as unknown as EventDocument;
 }
 
@@ -78,7 +80,12 @@ describe("doesRuleLikelyMatch", () => {
         minAmount: 5000,
         accountId: "acc_001"
       };
-      expect(doesRuleLikelyMatch(makeEvent({ type: "payment_received", amount: 8000, accountId: "acc_001" }), conditions)).toBe(true);
+      expect(
+        doesRuleLikelyMatch(
+          makeEvent({ type: "payment_received", amount: 8000, accountId: "acc_001" }),
+          conditions
+        )
+      ).toBe(true);
     });
 
     it("does not match when one condition fails", () => {
@@ -88,7 +95,12 @@ describe("doesRuleLikelyMatch", () => {
         accountId: "acc_001"
       };
       // amount too low
-      expect(doesRuleLikelyMatch(makeEvent({ type: "payment_received", amount: 100, accountId: "acc_001" }), conditions)).toBe(false);
+      expect(
+        doesRuleLikelyMatch(
+          makeEvent({ type: "payment_received", amount: 100, accountId: "acc_001" }),
+          conditions
+        )
+      ).toBe(false);
     });
   });
 });

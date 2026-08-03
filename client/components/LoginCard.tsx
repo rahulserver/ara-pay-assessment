@@ -38,7 +38,12 @@ export default function LoginCard({ onLogin }: LoginCardProps) {
             Use the seeded account credentials from the README.
           </Typography>
 
-          <TextField label="Email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth />
+          <TextField
+            label="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            fullWidth
+          />
           <TextField
             label="Password"
             type="password"

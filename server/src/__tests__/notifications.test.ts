@@ -70,9 +70,7 @@ describe("GET /notifications", () => {
   });
 
   it("returns empty array when no notifications exist", async () => {
-    const res = await request(app)
-      .get("/notifications")
-      .set("Authorization", `Bearer ${token}`);
+    const res = await request(app).get("/notifications").set("Authorization", `Bearer ${token}`);
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
@@ -102,9 +100,7 @@ describe("GET /notifications", () => {
       message: "Rule matched"
     });
 
-    const res = await request(app)
-      .get("/notifications")
-      .set("Authorization", `Bearer ${token}`);
+    const res = await request(app).get("/notifications").set("Authorization", `Bearer ${token}`);
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(1);

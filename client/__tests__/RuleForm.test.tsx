@@ -78,7 +78,7 @@ describe("RuleForm", () => {
   });
 
   it("shows API error when saveRule fails", async () => {
-    mockSaveRule.mockRejectedValueOnce(new Error("A rule named \"Alert Rule\" already exists."));
+    mockSaveRule.mockRejectedValueOnce(new Error('A rule named "Alert Rule" already exists.'));
 
     render(<RuleForm onCreated={noop} />);
     await userEvent.type(screen.getByLabelText(/name/i), "Alert Rule");

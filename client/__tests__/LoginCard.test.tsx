@@ -45,7 +45,9 @@ describe("LoginCard", () => {
 // AuthContext + useAuth hook tests
 function TestConsumer() {
   const { authenticated } = useAuth();
-  return <div data-testid="auth-status">{authenticated ? "authenticated" : "not-authenticated"}</div>;
+  return (
+    <div data-testid="auth-status">{authenticated ? "authenticated" : "not-authenticated"}</div>
+  );
 }
 
 describe("AuthContext", () => {

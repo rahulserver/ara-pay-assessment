@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  List,
-  ListItem,
-  ListItemText,
-  Paper,
-  Stack,
-  Typography
-} from "@mui/material";
+import { List, ListItem, ListItemText, Paper, Stack, Typography } from "@mui/material";
 import { EventRecord } from "@/lib/types";
 
 function formatMoney(amount: number, currency: string) {

@@ -30,9 +30,7 @@ afterEach(async () => {
 
 describe("POST /webhooks/events", () => {
   it("returns 400 for missing required fields", async () => {
-    const res = await request(app)
-      .post("/webhooks/events")
-      .send({ id: "evt_1" });
+    const res = await request(app).post("/webhooks/events").send({ id: "evt_1" });
 
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("invalid event payload");
@@ -79,7 +77,7 @@ describe("POST /webhooks/events", () => {
       .send({ id: "evt_pipeline", type: "payment_received", accountId: "acc_001", amount: 5000 });
 
     // Pipeline is fire-and-forget — wait briefly for it to complete
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 200));
 
     const notifications = await NotificationModel.find({});
     expect(notifications).toHaveLength(1);

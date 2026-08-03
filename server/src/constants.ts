@@ -5,5 +5,5 @@
 
 export const Http = {
   /** Maximum allowed request body size for webhook event ingestion. */
-  MAX_WEBHOOK_BODY_SIZE: "100kb",
+  MAX_WEBHOOK_BODY_SIZE: "100kb"
 } as const;

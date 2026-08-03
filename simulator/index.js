@@ -2,14 +2,7 @@ const endpoint = process.env.WEBHOOK_URL || "http://localhost:4000/webhooks/even
 const intervalMs = Number(process.env.INTERVAL_MS || 2000);
 
 const eventTypes = ["payment_received", "overdue", "dispute_raised", "invoice_created"];
-const accounts = [
-  "acc_1001",
-  "acc_1002",
-  "acc_1003",
-  "acc_1012",
-  "acc_1017",
-  "acc_1024"
-];
+const accounts = ["acc_1001", "acc_1002", "acc_1003", "acc_1012", "acc_1017", "acc_1024"];
 // Returns a random item from the given array
 function randomFrom(items) {
   return items[Math.floor(Math.random() * items.length)];
@@ -42,7 +35,7 @@ function makeEvent() {
   };
 }
 
-// Sends a random event to the webhook endpoint 
+// Sends a random event to the webhook endpoint
 async function send() {
   const event = makeEvent();
 

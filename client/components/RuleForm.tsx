@@ -133,7 +133,12 @@ export default function RuleForm({ onCreated }: RuleFormProps) {
             />
 
             <FormControlLabel
-              control={<Switch checked={draft.enabled} onChange={(e) => handleChange("enabled", e.target.checked)} />}
+              control={
+                <Switch
+                  checked={draft.enabled}
+                  onChange={(e) => handleChange("enabled", e.target.checked)}
+                />
+              }
               label="Enabled"
             />
 

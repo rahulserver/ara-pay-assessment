@@ -65,7 +65,10 @@ describe("POST /rules", () => {
     const payload = { name: "Duplicate rule", eventType: "overdue" };
 
     await request(app).post("/rules").set("Authorization", `Bearer ${token}`).send(payload);
-    const res = await request(app).post("/rules").set("Authorization", `Bearer ${token}`).send(payload);
+    const res = await request(app)
+      .post("/rules")
+      .set("Authorization", `Bearer ${token}`)
+      .send(payload);
 
     expect(res.status).toBe(409);
     expect(res.body.error).toContain("Duplicate rule");
@@ -94,9 +97,7 @@ describe("GET /rules", () => {
   });
 
   it("returns empty array when no rules exist", async () => {
-    const res = await request(app)
-      .get("/rules")
-      .set("Authorization", `Bearer ${token}`);
+    const res = await request(app).get("/rules").set("Authorization", `Bearer ${token}`);
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);

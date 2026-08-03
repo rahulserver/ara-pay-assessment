@@ -24,10 +24,12 @@ export function buildApp(): express.Express {
   app.use("/rules", rulesRoutes);
   app.use("/notifications", notificationsRoutes);
 
-  app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    console.error("[server] unhandled error", err);
-    res.status(500).json({ error: "internal server error" });
-  });
+  app.use(
+    (err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+      console.error("[server] unhandled error", err);
+      res.status(500).json({ error: "internal server error" });
+    }
+  );
 
   return app;
 }

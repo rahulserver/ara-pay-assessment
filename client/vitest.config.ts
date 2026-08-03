@@ -12,12 +12,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text"],
       thresholds: { lines: 70 },
-      include: [
-        "lib/**/*.ts",
-        "context/**/*.tsx",
-        "hooks/**/*.tsx",
-        "components/**/*.tsx"
-      ],
+      include: ["lib/**/*.ts", "context/**/*.tsx", "hooks/**/*.tsx", "components/**/*.tsx"],
       exclude: ["**/__tests__/**", "**/*.test.{ts,tsx}"]
     }
   },

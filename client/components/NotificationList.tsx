@@ -1,21 +1,16 @@
 "use client";
 
-import {
-  Chip,
-  List,
-  ListItem,
-  ListItemText,
-  Paper,
-  Stack,
-  Typography
-} from "@mui/material";
+import { Chip, List, ListItem, ListItemText, Paper, Stack, Typography } from "@mui/material";
 import { NotificationRecord } from "@/lib/types";
 
 interface NotificationListProps {
   notifications: NotificationRecord[];
 }
 
-const statusColor: Record<NotificationRecord["status"], "default" | "success" | "error" | "warning"> = {
+const statusColor: Record<
+  NotificationRecord["status"],
+  "default" | "success" | "error" | "warning"
+> = {
   pending: "warning",
   sent: "success",
   failed: "error"
@@ -36,7 +31,10 @@ export default function NotificationList({ notifications }: NotificationListProp
       <List sx={{ mt: 1 }}>
         {notifications.length === 0 ? (
           <ListItem>
-            <ListItemText primary="No notifications yet" secondary="Check rules and event pipeline" />
+            <ListItemText
+              primary="No notifications yet"
+              secondary="Check rules and event pipeline"
+            />
           </ListItem>
         ) : (
           notifications.map((notification) => (
@@ -47,7 +45,11 @@ export default function NotificationList({ notifications }: NotificationListProp
                   notification.createdAt
                 ).toLocaleString()}`}
               />
-              <Chip size="small" color={statusColor[notification.status]} label={notification.status} />
+              <Chip
+                size="small"
+                color={statusColor[notification.status]}
+                label={notification.status}
+              />
             </ListItem>
           ))
         )}
