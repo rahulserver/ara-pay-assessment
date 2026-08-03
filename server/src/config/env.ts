@@ -17,7 +17,7 @@ export const env = {
   port: Number(process.env.PORT || 4000),
   mongoUri: required(
     "MONGO_URI",
-    "mongodb://root:root@localhost:27017/ara_assessment?authSource=admin"
+    "mongodb://root:root@localhost:27018/ara_assessment?authSource=admin"
   ),
   jwtSecret: required("JWT_SECRET", "dev-secret"),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "1h"
