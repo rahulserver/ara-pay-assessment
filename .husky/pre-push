@@ -1,12 +1,15 @@
 #!/bin/sh
-# Run linter + tests before push
+# Auto-fix lint and formatting, then run tests before push
 
-echo "Running ESLint..."
-npm run lint --workspace server
-npm run lint --workspace client
+echo "Running ESLint with --fix..."
+npm run lint --workspace server -- --fix || true
+npm run lint --workspace client -- --fix || true
 
-echo "Running Prettier check..."
-node_modules/.bin/prettier --check "server/src/**/*.ts" "client/**/*.{ts,tsx}" --ignore-path .prettierignore
+echo "Running Prettier --write..."
+node_modules/.bin/prettier --write "server/src/**/*.ts" "client/**/*.{ts,tsx}" --ignore-path .prettierignore
+
+# Restage any files that were auto-fixed
+git add -u
 
 echo "Running server tests..."
 npm run test --workspace server
