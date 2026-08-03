@@ -236,3 +236,244 @@ test.describe("Full notification flow", () => {
   });
 });
 
+// ─── Pipeline Logic (API-only, no browser) ──────────────────────────────────
+
+test.describe("Pipeline notification logic", () => {
+  let token: string;
+
+  // Helper: get auth token via API
+  async function getToken(request: import("@playwright/test").APIRequestContext) {
+    const res = await request.post(`${API_URL}/auth/login`, {
+      data: { email: "owner@ara-research.dev", password: "password123" }
+    });
+    const body = await res.json();
+    return body.token as string;
+  }
+
+  // Helper: create a rule via API
+  async function createRule(
+    request: import("@playwright/test").APIRequestContext,
+    rule: Record<string, unknown>
+  ) {
+    const res = await request.post(`${API_URL}/rules`, {
+      headers: { Authorization: `Bearer ${token}` },
+      data: rule
+    });
+    expect(res.status()).toBe(201);
+    return res.json();
+  }
+
+  // Helper: fire a webhook event
+  async function sendEvent(
+    request: import("@playwright/test").APIRequestContext,
+    overrides: Record<string, unknown> = {}
+  ) {
+    const res = await request.post(`${API_URL}/webhooks/events`, {
+      data: {
+        id: `pipe_${Date.now()}_${Math.random()}`,
+        type: "payment_received",
+        accountId: "acc_test",
+        amount: 1000,
+        currency: "USD",
+        ...overrides
+      }
+    });
+    expect(res.status()).toBe(200);
+  }
+
+  // Helper: get all notifications (waits for pipeline to complete)
+  async function getNotifications(request: import("@playwright/test").APIRequestContext) {
+    await new Promise((r) => setTimeout(r, 300)); // pipeline is fire-and-forget
+    const res = await request.get(`${API_URL}/notifications`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.json() as Promise<{ message: string; ruleId: { name: string } }[]>;
+  }
+
+  test.beforeEach(async ({ request }) => {
+    await clearDB();
+    token = await getToken(request);
+  });
+
+  // ── Basic matching ────────────────────────────────────────────────────────
+
+  test("no rules → no notifications", async ({ request }) => {
+    await sendEvent(request);
+    const notifications = await getNotifications(request);
+    expect(notifications).toHaveLength(0);
+  });
+
+  test("matching rule → notification created", async ({ request }) => {
+    await createRule(request, { name: "Basic Rule", eventType: "payment_received" });
+    await sendEvent(request);
+    const notifications = await getNotifications(request);
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0].message).toContain("Basic Rule");
+  });
+
+  test("disabled rule → no notification", async ({ request }) => {
+    await createRule(request, {
+      name: "Disabled Rule",
+      eventType: "payment_received",
+      enabled: false
+    });
+    await sendEvent(request);
+    const notifications = await getNotifications(request);
+    expect(notifications).toHaveLength(0);
+  });
+
+  // ── eventType matching ────────────────────────────────────────────────────
+
+  test("all four event types match their respective rules", async ({ request }) => {
+    const types = ["payment_received", "overdue", "dispute_raised", "invoice_created"] as const;
+    for (const type of types) {
+      await createRule(request, { name: `Rule-${type}`, eventType: type });
+    }
+    for (const type of types) {
+      await sendEvent(request, { id: `evt-${type}-${Date.now()}`, type });
+    }
+    const notifications = await getNotifications(request);
+    expect(notifications).toHaveLength(4);
+    for (const type of types) {
+      expect(notifications.some((n) => n.message.includes(type))).toBe(true);
+    }
+  });
+
+  test("event type mismatch → no notification", async ({ request }) => {
+    await createRule(request, { name: "Overdue Rule", eventType: "overdue" });
+    await sendEvent(request, { type: "payment_received" }); // wrong type
+    const notifications = await getNotifications(request);
+    expect(notifications).toHaveLength(0);
+  });
+
+  // ── minAmount threshold ───────────────────────────────────────────────────
+
+  test("amount below minAmount threshold → no notification", async ({ request }) => {
+    await createRule(request, {
+      name: "High Value",
+      eventType: "payment_received",
+      minAmount: 5000
+    });
+    await sendEvent(request, { amount: 4999 });
+    const notifications = await getNotifications(request);
+    expect(notifications).toHaveLength(0);
+  });
+
+  test("amount exactly at minAmount threshold → notification", async ({ request }) => {
+    await createRule(request, {
+      name: "High Value",
+      eventType: "payment_received",
+      minAmount: 5000
+    });
+    await sendEvent(request, { amount: 5000 });
+    const notifications = await getNotifications(request);
+    expect(notifications).toHaveLength(1);
+  });
+
+  test("amount above minAmount threshold → notification", async ({ request }) => {
+    await createRule(request, {
+      name: "High Value",
+      eventType: "payment_received",
+      minAmount: 5000
+    });
+    await sendEvent(request, { amount: 9999 });
+    const notifications = await getNotifications(request);
+    expect(notifications).toHaveLength(1);
+  });
+
+  // ── accountId filter ──────────────────────────────────────────────────────
+
+  test("matching accountId → notification", async ({ request }) => {
+    await createRule(request, {
+      name: "Watch acc_001",
+      eventType: "payment_received",
+      accountId: "acc_001"
+    });
+    await sendEvent(request, { accountId: "acc_001" });
+    const notifications = await getNotifications(request);
+    expect(notifications).toHaveLength(1);
+  });
+
+  test("different accountId → no notification", async ({ request }) => {
+    await createRule(request, {
+      name: "Watch acc_001",
+      eventType: "payment_received",
+      accountId: "acc_001"
+    });
+    await sendEvent(request, { accountId: "acc_999" });
+    const notifications = await getNotifications(request);
+    expect(notifications).toHaveLength(0);
+  });
+
+  // ── Specificity ───────────────────────────────────────────────────────────
+
+  test("catch-all (score 0) fires when no specific rule exists", async ({ request }) => {
+    await createRule(request, { name: "Catch-all", eventType: "payment_received" });
+    await sendEvent(request);
+    const notifications = await getNotifications(request);
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0].ruleId.name).toBe("Catch-all");
+  });
+
+  test("specific rule (score 1) suppresses catch-all (score 0)", async ({ request }) => {
+    await createRule(request, { name: "Catch-all", eventType: "payment_received" });
+    await createRule(request, {
+      name: "Specific",
+      eventType: "payment_received",
+      accountId: "acc_test"
+    });
+    await sendEvent(request);
+    const notifications = await getNotifications(request);
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0].ruleId.name).toBe("Specific");
+  });
+
+  test("two score-1 rules with different conditions both fire", async ({ request }) => {
+    await createRule(request, {
+      name: "Amount Rule",
+      eventType: "payment_received",
+      minAmount: 500
+    });
+    await createRule(request, {
+      name: "Account Rule",
+      eventType: "payment_received",
+      accountId: "acc_test"
+    });
+    await sendEvent(request, { amount: 1000, accountId: "acc_test" });
+    const notifications = await getNotifications(request);
+    expect(notifications).toHaveLength(2);
+    const names = notifications.map((n) => n.ruleId.name);
+    expect(names).toContain("Amount Rule");
+    expect(names).toContain("Account Rule");
+  });
+
+  test("score-2 rule suppresses score-1 rules", async ({ request }) => {
+    await createRule(request, {
+      name: "Score-1 Amount",
+      eventType: "payment_received",
+      minAmount: 500
+    });
+    await createRule(request, {
+      name: "Score-2 Full",
+      eventType: "payment_received",
+      minAmount: 500,
+      accountId: "acc_test"
+    });
+    await sendEvent(request, { amount: 1000, accountId: "acc_test" });
+    const notifications = await getNotifications(request);
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0].ruleId.name).toBe("Score-2 Full");
+  });
+
+  // ── Multiple events ───────────────────────────────────────────────────────
+
+  test("multiple events with one rule → one notification per event", async ({ request }) => {
+    await createRule(request, { name: "Counter Rule", eventType: "payment_received" });
+    await sendEvent(request, { id: `evt1_${Date.now()}` });
+    await sendEvent(request, { id: `evt2_${Date.now()}` });
+    await sendEvent(request, { id: `evt3_${Date.now()}` });
+    const notifications = await getNotifications(request);
+    expect(notifications).toHaveLength(3);
+  });
+});
+
