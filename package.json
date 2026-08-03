@@ -16,6 +16,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json}\" --ignore-path .prettierignore",
     "e2e": "playwright test",
     "e2e:headed": "playwright test --headed",
+    "e2e:report": "playwright show-report",
     "prepare": "husky"
   },
   "lint-staged": {
