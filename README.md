@@ -58,3 +58,40 @@ A working dev server is not a complete verification pass for this project. Some 
 ## Environment configuration
 
 Copy `.env.example` to `.env` only if you need to override defaults. The current defaults are enough for local startup.
+
+## Production build
+
+```bash
+npm run build   # compile server + build client
+npm start       # run both in production mode
+```
+
+## Code quality
+
+**Linting** — ESLint v9 flat config. Server: TypeScript rules. Client: TypeScript + React hooks rules.
+
+```bash
+npm run lint                              # check both workspaces
+npm run lint:fix --workspace server       # auto-fix server
+npm run lint:fix --workspace client       # auto-fix client
+```
+
+**Formatting** — Prettier with shared `.prettierrc`.
+
+```bash
+npm run format    # format all files
+```
+
+**Git hooks (Husky + lint-staged)**
+
+- Pre-commit: ESLint `--fix` + Prettier on staged files only (fast, non-blocking)
+- Pre-push: full lint check + Prettier check + all tests — rejects push on failure
+
+**Tests**
+
+```bash
+npm run test --workspace server                  # 34 tests
+npm run test:coverage --workspace server         # with coverage report (threshold: 80%)
+npm run test --workspace client                  # 23 tests
+npm run test:coverage --workspace client         # with coverage report (threshold: 70%)
+```
