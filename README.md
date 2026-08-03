@@ -68,7 +68,7 @@ npm start       # run both in production mode
 
 ## Code quality
 
-**Linting** — ESLint v9 flat config. Server: TypeScript rules. Client: TypeScript + React hooks rules.
+**Linting** — ESLint v9 flat config. Server: TypeScript rules. Client: TypeScript + React recommended rules (component patterns, JSX, hooks exhaustive-deps, rules-of-hooks).
 
 ```bash
 npm run lint                              # check both workspaces
