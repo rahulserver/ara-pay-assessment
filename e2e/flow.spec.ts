@@ -90,16 +90,19 @@ test.describe("Rule management", () => {
 
   test("shows validation error for negative minimum amount", async ({ page }) => {
     await page.getByLabel("Name").fill("Bad Amount Rule");
-    // Use React's native input value setter to bypass browser min=0 constraint
-    // and trigger React's synthetic onChange handler
+    // type="number" with min=0 prevents negative values at browser level.
+    // Temporarily switch to type=text to bypass browser constraint and test
+    // our JS validation (defence-in-depth for programmatic/API bypass).
     await page.getByLabel(/minimum amount/i).evaluate((input) => {
+      const el = input as HTMLInputElement;
+      el.type = "text";
       const nativeSetter = Object.getOwnPropertyDescriptor(
         window.HTMLInputElement.prototype,
         "value"
       )!.set;
-      nativeSetter!.call(input, "-100");
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-      input.dispatchEvent(new Event("change", { bubbles: true }));
+      nativeSetter!.call(el, "-100");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
     });
     await page.getByRole("button", { name: /save rule/i }).click();
     await expect(page.getByText(/positive number/i)).toBeVisible();
