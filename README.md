@@ -85,7 +85,7 @@ npm run format    # format all files
 **Git hooks (Husky + lint-staged)**
 
 - Pre-commit: ESLint `--fix` + Prettier on staged files only (fast, non-blocking)
-- Pre-push: full lint check + Prettier check + all tests — rejects push on failure
+- Pre-push: full lint check + Prettier check + all tests — rejects push on failure(NOTE: this should be in the CI pipeline in an actual app as its easy to bypass these running locally)
 
 **Tests**
 
