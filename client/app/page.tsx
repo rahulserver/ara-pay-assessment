@@ -1,6 +1,15 @@
 "use client";
 
-import { Box, CircularProgress, Grid, IconButton, Paper, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  CircularProgress,
+  Grid,
+  IconButton,
+  Paper,
+  Stack,
+  Tooltip,
+  Typography
+} from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { useCallback, useEffect, useState } from "react";
 import EventList from "@/components/EventList";
@@ -89,8 +98,24 @@ export default function HomePage() {
                 Webhook Notifications Dashboard
               </Typography>
               <Typography variant="body2" color="text.secondary" mt={0.5}>
-                {events.length} events · {notifications.length} notifications · {rules.length} rule
-                {rules.length !== 1 ? "s" : ""}
+                {events.length} events · {notifications.length} notifications ·{" "}
+                <Tooltip
+                  title={
+                    rules.length === 0 ? "No rules configured" : rules.map((r) => r.name).join(", ")
+                  }
+                  arrow
+                >
+                  <Box
+                    component="span"
+                    sx={{
+                      cursor: "default",
+                      borderBottom: "1px dashed",
+                      borderColor: "text.secondary"
+                    }}
+                  >
+                    {rules.length} rule{rules.length !== 1 ? "s" : ""}
+                  </Box>
+                </Tooltip>
               </Typography>
             </Box>
             <IconButton onClick={() => refresh()}>

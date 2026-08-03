@@ -123,6 +123,15 @@ test.describe("Rule management", () => {
 
     await expect(page.getByText(`${beforeCount + 1} rule`)).toBeVisible();
   });
+
+  test("hovering rule count shows rule names in tooltip", async ({ page }) => {
+    await page.getByLabel("Name").fill("Tooltip Rule");
+    await page.getByRole("button", { name: /save rule/i }).click();
+    await expect(page.getByLabel("Name")).toHaveValue("", { timeout: 5000 });
+
+    await page.getByText(/1 rule/).hover();
+    await expect(page.getByText("Tooltip Rule")).toBeVisible({ timeout: 3000 });
+  });
 });
 
 // ─── Webhook + Pipeline ──────────────────────────────────────────────────────
