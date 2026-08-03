@@ -90,12 +90,10 @@ test.describe("Rule management", () => {
 
   test("shows validation error for negative minimum amount", async ({ page }) => {
     await page.getByLabel("Name").fill("Bad Amount Rule");
-    // type="number" with min=0 prevents negative values at browser level.
-    // Temporarily switch to type=text to bypass browser constraint and test
-    // our JS validation (defence-in-depth for programmatic/API bypass).
+
+    // Set the value via React's internal state tracker so it survives re-renders
     await page.getByLabel(/minimum amount/i).evaluate((input) => {
       const el = input as HTMLInputElement;
-      el.type = "text";
       const nativeSetter = Object.getOwnPropertyDescriptor(
         window.HTMLInputElement.prototype,
         "value"
@@ -104,6 +102,12 @@ test.describe("Rule management", () => {
       el.dispatchEvent(new Event("input", { bubbles: true }));
       el.dispatchEvent(new Event("change", { bubbles: true }));
     });
+
+    // Disable browser native validation so our React handleSubmit can run
+    await page.evaluate(() => {
+      document.querySelector("form")?.setAttribute("novalidate", "");
+    });
+
     await page.getByRole("button", { name: /save rule/i }).click();
     await expect(page.getByText(/positive number/i)).toBeVisible();
   });
