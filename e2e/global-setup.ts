@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import { MongoClient } from "mongodb";
 
 const MONGO_URI =
   process.env.MONGO_URI ||
@@ -6,13 +6,16 @@ const MONGO_URI =
 
 export default async function globalSetup() {
   console.log("[e2e setup] connecting to MongoDB...");
-  await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 });
+  const client = new MongoClient(MONGO_URI);
+  await client.connect();
 
-  const collections = mongoose.connection.collections;
-  for (const key in collections) {
-    await collections[key].deleteMany({});
-  }
+  const db = client.db();
+  await Promise.all([
+    db.collection("events").deleteMany({}),
+    db.collection("notifications").deleteMany({}),
+    db.collection("rules").deleteMany({})
+  ]);
 
   console.log("[e2e setup] database cleared");
-  await mongoose.disconnect();
+  await client.close();
 }
