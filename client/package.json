@@ -21,6 +21,7 @@
     "react-dom": "18.3.1"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.6",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
@@ -31,7 +32,10 @@
     "@typescript-eslint/parser": "^8.65.0",
     "@vitejs/plugin-react": "^6.0.5",
     "@vitest/coverage-v8": "^4.1.10",
+    "eslint-config-next": "^16.2.12",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "jsdom": "^30.0.1",
     "typescript": "^5.5.4",
     "vitest": "^4.1.10"
