@@ -14,6 +14,7 @@
     "start": "concurrently \"npm run start --workspace server\" \"npm run start --workspace client\"",
     "lint": "npm run lint --workspace server && npm run lint --workspace client",
     "format": "prettier --write \"**/*.{ts,tsx,js,json}\" --ignore-path .prettierignore",
+    "e2e": "playwright test",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -30,6 +31,7 @@
     ]
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "concurrently": "^8.2.2",
     "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
