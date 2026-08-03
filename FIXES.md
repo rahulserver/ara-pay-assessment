@@ -47,6 +47,7 @@ Added Zod (`server/src/zschemas/index.ts`) as single source of truth for both ru
 
 **What was broken:**
 `eventDoc.save()` was called without `await`. The FIXME comment in the original code acknowledged this explicitly. Consequences:
+
 - `processEvent` could run before the event was persisted to DB (race condition)
 - If `save()` threw (e.g. duplicate `sourceEventId`), the error was silently lost
 - A `200` response was returned even if the DB write failed
@@ -58,6 +59,7 @@ Code trace of the webhook handler. The original `// FIXME` comment confirmed it 
 Intentional deferral by the contractor — comment said "should be awaited once we tighten pipeline consistency."
 
 **Fix:**
+
 - Added `await` to `eventDoc.save()`
 - Wrapped in try/catch with duplicate key check (MongoDB error code `11000`) — returns `200 + duplicate: true` for idempotent replays instead of a 500
 - Moved `processEvent` call to after the save succeeds, eliminating the race condition
@@ -165,6 +167,7 @@ Removed the try/catch suppression. `saveRule` now returns `Promise<RuleRecord>` 
 **Files:** `server/tsconfig.json`, `client/tsconfig.json`
 
 **What was broken:**
+
 - Server: `"moduleResolution": "Node"` (deprecated alias for `node10`, stops working in TypeScript 7.0)
 - Client: `"target": "es5"` (deprecated, stops working in TypeScript 7.0)
 
@@ -175,6 +178,7 @@ TypeScript compiler warnings surfaced during code review.
 Config written against older TypeScript defaults, never updated.
 
 **Fix:**
+
 - Server: upgraded to `"module": "Node16"`, `"moduleResolution": "Node16"` — correct paired setting for a modern Node.js CommonJS project
 - Client: upgraded to `"target": "ES2017"` — appropriate for Next.js which handles browser compat via SWC; `noEmit: true` means tsc output target has no effect on the bundle anyway
 
@@ -186,3 +190,24 @@ Config written against older TypeScript defaults, never updated.
 - **No rate limiting on webhook endpoint**: No protection against event flooding. A queue-backed pipeline (see DESIGN.md) is the right fix at scale, not a request rate limiter.
 - **No token refresh mechanism**: Client re-authenticates after 1h expiry. Acceptable for a dashboard with a single user; would need refresh tokens for production.
 
+---
+
+## [DESIGN] eventType was optional in RuleConditions — enabling ambiguous catch-all rules
+
+**Files:** `server/src/models/Rule.ts`, `server/src/services/pipeline.ts`
+
+**What was broken:**
+`RuleConditions.eventType` was typed as optional (`EventType?`). This allowed rules with no `eventType` to match every event regardless of type — a silent catch-all. It also created a notification deduplication problem: when multiple rules matched the same event (e.g. a specific rule and a catch-all), the shared notification feed showed duplicate entries for the same event, which reads as a bug.
+
+**How identified:**
+Domain analysis. Notifications have no `userId` — they are posted to a shared org-level feed. Multiple notifications for the same event from overlapping rules creates noise, not intentional multi-audience routing.
+
+**Root cause:**
+The `CreateRuleSchema` already required `eventType` at the API level, but the stored `RuleConditions` type didn't enforce this. No specificity logic existed — all matching rules fired independently.
+
+**Fix:**
+
+1. Made `eventType` required in `RuleConditions` and the Mongoose schema.
+2. Implemented specificity-based rule evaluation: rules are scored by the number of optional narrowing conditions set (`minAmount`, `accountId`). Only the most specific matching rule(s) fire — less specific rules are suppressed. Tied rules (equal score, different conditions) both fire since they represent genuinely different alert concerns (amount vs account).
+
+This prevents duplicate notifications on the shared feed while preserving the audit value of narrowly scoped rules.

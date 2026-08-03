@@ -18,11 +18,6 @@ function makeEvent(
 
 describe("doesRuleLikelyMatch", () => {
   describe("eventType condition", () => {
-    it("matches when no eventType is set on the rule", () => {
-      const conditions: RuleConditions = {};
-      expect(doesRuleLikelyMatch(makeEvent({}), conditions)).toBe(true);
-    });
-
     it("matches when eventType matches the event", () => {
       const conditions: RuleConditions = { eventType: "payment_received" };
       expect(doesRuleLikelyMatch(makeEvent({ type: "payment_received" }), conditions)).toBe(true);
@@ -36,39 +31,39 @@ describe("doesRuleLikelyMatch", () => {
 
   describe("minAmount condition", () => {
     it("matches when no minAmount is set", () => {
-      const conditions: RuleConditions = {};
+      const conditions: RuleConditions = { eventType: "payment_received" };
       expect(doesRuleLikelyMatch(makeEvent({ amount: 0 }), conditions)).toBe(true);
     });
 
     it("matches when amount equals minAmount", () => {
-      const conditions: RuleConditions = { minAmount: 500 };
+      const conditions: RuleConditions = { eventType: "payment_received", minAmount: 500 };
       expect(doesRuleLikelyMatch(makeEvent({ amount: 500 }), conditions)).toBe(true);
     });
 
     it("matches when amount exceeds minAmount", () => {
-      const conditions: RuleConditions = { minAmount: 500 };
+      const conditions: RuleConditions = { eventType: "payment_received", minAmount: 500 };
       expect(doesRuleLikelyMatch(makeEvent({ amount: 9000 }), conditions)).toBe(true);
     });
 
     it("does not match when amount is below minAmount", () => {
-      const conditions: RuleConditions = { minAmount: 5000 };
+      const conditions: RuleConditions = { eventType: "payment_received", minAmount: 5000 };
       expect(doesRuleLikelyMatch(makeEvent({ amount: 499 }), conditions)).toBe(false);
     });
   });
 
   describe("accountId condition", () => {
     it("matches when no accountId is set", () => {
-      const conditions: RuleConditions = {};
+      const conditions: RuleConditions = { eventType: "payment_received" };
       expect(doesRuleLikelyMatch(makeEvent({}), conditions)).toBe(true);
     });
 
     it("matches when accountId matches", () => {
-      const conditions: RuleConditions = { accountId: "acc_001" };
+      const conditions: RuleConditions = { eventType: "payment_received", accountId: "acc_001" };
       expect(doesRuleLikelyMatch(makeEvent({ accountId: "acc_001" }), conditions)).toBe(true);
     });
 
     it("does not match when accountId differs", () => {
-      const conditions: RuleConditions = { accountId: "acc_999" };
+      const conditions: RuleConditions = { eventType: "payment_received", accountId: "acc_999" };
       expect(doesRuleLikelyMatch(makeEvent({ accountId: "acc_001" }), conditions)).toBe(false);
     });
   });

@@ -5,11 +5,20 @@ import { RuleConditions, RuleModel } from "../models/Rule";
 export function doesRuleLikelyMatch(event: EventDocument, conditions: RuleConditions): boolean {
   const { eventType, minAmount, accountId } = conditions;
 
-  const typeMatches = eventType === undefined || eventType === event.type;
+  const typeMatches = eventType === event.type;
   const amountMatches = minAmount === undefined || event.amount >= minAmount;
   const accountMatches = accountId === undefined || accountId === event.accountId;
 
   return typeMatches && amountMatches && accountMatches;
+}
+
+/**
+ * Returns the specificity score of a rule's optional conditions.
+ * eventType is required on all rules and does not differentiate.
+ * Only the narrowing conditions (minAmount, accountId) add specificity.
+ */
+function conditionScore(conditions: RuleConditions): number {
+  return [conditions.minAmount, conditions.accountId].filter((v) => v !== undefined).length;
 }
 
 export async function processEvent(event: EventDocument): Promise<void> {
@@ -19,15 +28,21 @@ export async function processEvent(event: EventDocument): Promise<void> {
     return;
   }
 
+  const matchingRules = activeRules.filter((rule) => doesRuleLikelyMatch(event, rule.conditions));
+
+  if (matchingRules.length === 0) {
+    return;
+  }
+
   // DONE: implement full rule evaluation engine.
-  for (const rule of activeRules) {
+  // Fire only the most specific matching rule(s) to avoid duplicate notifications
+  // on the shared feed. Specificity = number of optional narrowing conditions set.
+  // Rules with equal score both fire (they represent different concerns: amount vs account).
+  const maxScore = Math.max(...matchingRules.map((r) => conditionScore(r.conditions)));
+  const rulesToFire = matchingRules.filter((r) => conditionScore(r.conditions) === maxScore);
+
+  for (const rule of rulesToFire) {
     try {
-      const maybeMatch = doesRuleLikelyMatch(event, rule.conditions || {});
-
-      if (!maybeMatch) {
-        continue;
-      }
-
       const message = `Rule "${rule.name}" matched: ${event.type} $${event.amount} ${event.currency} on ${event.accountId}`;
 
       // DONE: create notification records for all matching rules.

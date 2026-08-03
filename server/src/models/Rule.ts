@@ -2,7 +2,7 @@ import { HydratedDocument, Schema, model } from "mongoose";
 import { EventType } from "../zschemas";
 
 export interface RuleConditions {
-  eventType?: EventType;
+  eventType: EventType;
   minAmount?: number;
   accountId?: string;
 }
@@ -28,6 +28,7 @@ const ruleSchema = new Schema<Rule>(
     conditions: {
       eventType: {
         type: String,
+        required: true,
         enum: ["payment_received", "overdue", "dispute_raised", "invoice_created"]
       },
       minAmount: { type: Number },

@@ -23,6 +23,7 @@
 ```
 
 **Key boundaries:**
+
 - **Ingestion boundary** (`/webhooks/events`): validates, persists, returns 200 immediately. Webhook senders get fast acknowledgment regardless of pipeline speed.
 - **Processing boundary** (`processEvent`): runs async after response, fully decoupled from the HTTP lifecycle. Failure here does not affect the HTTP response.
 - **Read boundary** (`/notifications`, `/events`, `/rules`): auth-gated, uses Mongoose `populate` to join Event and Rule documents into notification responses.
@@ -31,13 +32,23 @@
 
 ## 2. Rule Evaluation and Conflict Handling
 
-Each rule defines up to three optional conditions: `eventType`, `minAmount`, `accountId`. All set conditions are ANDed — a rule only matches if every specified condition is satisfied.
+Each rule defines one required condition (`eventType`) and two optional narrowing conditions (`minAmount`, `accountId`). All set conditions are ANDed — a rule only matches if every condition is satisfied.
 
-**Multiple matching rules:** All matching rules fire independently. This is intentional. In a financial monitoring context, rules represent distinct alert concerns — one rule may watch for disputes on a specific account, another for any high-value payment. A dispute on a watched account should trigger both alerts. Suppressing one would create a silent monitoring gap.
+**Multiple matching rules — specificity wins:**
+When multiple rules match the same event, only the most specific rule(s) fire. Specificity is scored by the number of optional conditions set (`minAmount`, `accountId`). `eventType` is required on all rules and does not differentiate.
 
-**Conflicts:** There are no true conflicts in this model. Rules don't issue contradictory instructions — they each independently say "notify me." An event matching N rules produces N notifications. 
+```
+Rule A: eventType + accountId  → score 1  (account-specific)
+Rule B: eventType + minAmount  → score 1  (amount-specific)
+Rule C: eventType only         → score 0  (catch-all)
+```
 
-**Known limitation:** Multiple notifications for the same event can be noisy. The recommended next step is per-channel deduplication: cap at one `in_app` notification per event, but surface all matched rule names in the message. This preserves the audit value without spamming the dashboard.
+If event matches all three, only Rules A and B fire (both score 1). Rule C is suppressed — it would only fire if no more specific rule matched. This prevents duplicate notifications on the shared dashboard from overlapping rules.
+
+**Ties (equal specificity, different conditions):** Both fire. Rule A and Rule B watch different dimensions (who vs how much) and represent genuinely different alert concerns.
+
+**Why this model:**
+Notifications are posted to a shared org-level feed visible to all users. The `Notification` schema has no `userId` — rules are system-level configurations, not per-user subscriptions. Firing all matching rules regardless of specificity would produce duplicate entries in the shared feed, which reads as a bug to the team, not intentional routing.
 
 ---
 
@@ -75,6 +86,7 @@ The cost: if the pipeline fails silently after the response is sent, notificatio
 At ~167 events/second, in-process fire-and-forget pipeline calls accumulate faster than they resolve. Each pipeline call performs two DB operations (rule query + notification write), all competing for the same MongoDB connection pool (default 5 connections). The callbacks queuing on the Node.js event loop also create lag that degrades the HTTP server's ability to handle incoming webhook requests. The fix: after `EventModel.save()`, push the event ID onto a BullMQ job queue. A separate worker pool consumes jobs and runs `processEvent`. The HTTP server's only job becomes validate → save → enqueue → respond.
 
 This gives:
+
 - Ingestion and processing that scale independently
 - Durable job storage — jobs survive process crashes (Redis persistence)
 - Built-in retry with backoff for failed notification writes
