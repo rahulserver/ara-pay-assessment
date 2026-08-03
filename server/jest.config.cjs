@@ -4,7 +4,10 @@ module.exports = {
   testEnvironment: "node",
   roots: ["<rootDir>/src"],
   testMatch: ["**/__tests__/**/*.test.ts"],
-  testTimeout: 30000,  collectCoverageFrom: [
+  testTimeout: 30000,
+  testEnvironmentOptions: {
+    env: { NODE_ENV: "test" }
+  },  collectCoverageFrom: [
     "src/**/*.ts",
     "!src/__tests__/**",
     "!src/index.ts",

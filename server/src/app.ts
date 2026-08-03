@@ -11,7 +11,9 @@ export function buildApp(): express.Express {
 
   app.use(cors());
   app.use(express.json());
-  app.use(morgan("dev"));
+  if (process.env.NODE_ENV !== "test") {
+    app.use(morgan("dev"));
+  }
 
   app.get("/health", (_req, res) => {
     res.json({ ok: true, ts: new Date().toISOString() });
