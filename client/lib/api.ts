@@ -30,12 +30,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 /** Returns the raw token string — caller is responsible for storing it. */
 export async function login(email: string, password: string): Promise<string> {
-  const result = await request<{ token: string }>("/auth/login", {
-    method: "POST",
-    body: JSON.stringify({ email, password })
-  });
-
-  return result.token;
+  try {
+    const result = await request<{ token: string }>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password })
+    });
+    return result.token;
+  } catch (error) {
+    // AuthError is thrown by request() for all 401s — rethrow as plain error for login context
+    if (error instanceof AuthError) {
+      throw new Error("Invalid credentials");
+    }
+    throw error;
+  }
 }
 
 export async function fetchEvents(): Promise<EventRecord[]> {

@@ -1,9 +1,24 @@
 import { test, expect } from "@playwright/test";
+import { MongoClient } from "mongodb";
 
 const API_URL = "http://localhost:4000";
 const APP_URL = "http://localhost:3001";
+const MONGO_URI =
+  process.env.MONGO_URI ||
+  "mongodb://root:root@localhost:27018/ara_assessment?authSource=admin";
 
-// Helper: log in and return to dashboard
+async function clearDB() {
+  const client = new MongoClient(MONGO_URI);
+  await client.connect();
+  const db = client.db();
+  await Promise.all([
+    db.collection("events").deleteMany({}),
+    db.collection("notifications").deleteMany({}),
+    db.collection("rules").deleteMany({})
+  ]);
+  await client.close();
+}
+
 async function loginAs(page: import("@playwright/test").Page, email: string, password: string) {
   await page.goto(APP_URL);
   await page.getByLabel("Email").fill(email);
@@ -12,7 +27,6 @@ async function loginAs(page: import("@playwright/test").Page, email: string, pas
   await expect(page.getByText("Webhook Notifications Dashboard")).toBeVisible();
 }
 
-// Helper: fire a webhook event via API
 async function fireEvent(
   page: import("@playwright/test").Page,
   overrides: Record<string, unknown> = {}
@@ -54,6 +68,7 @@ test.describe("Authentication", () => {
 
 test.describe("Rule management", () => {
   test.beforeEach(async ({ page }) => {
+    await clearDB();
     await loginAs(page, "owner@ara-research.dev", "password123");
   });
 
@@ -75,7 +90,12 @@ test.describe("Rule management", () => {
 
   test("shows validation error for negative minimum amount", async ({ page }) => {
     await page.getByLabel("Name").fill("Bad Amount Rule");
-    await page.getByLabel(/minimum amount/i).fill("-100");
+    // Use JS to bypass browser min=0 constraint and trigger our validation
+    await page.getByLabel(/minimum amount/i).evaluate((el) => {
+      (el as HTMLInputElement).value = "-100";
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    });
     await page.getByRole("button", { name: /save rule/i }).click();
     await expect(page.getByText(/positive number/i)).toBeVisible();
   });
@@ -117,12 +137,11 @@ test.describe("Webhook event pipeline", () => {
   });
 
   test("event without a matching rule creates no notification", async ({ page }) => {
+    await clearDB();
     await loginAs(page, "owner@ara-research.dev", "password123");
 
-    // fire event — no rules exist (DB was cleared)
+    // No rules exist — fire event, wait one poll cycle
     await fireEvent(page, { id: `e2e_nomatch_${Date.now()}` });
-
-    // wait one poll cycle then assert no notifications
     await page.waitForTimeout(5000);
     await expect(page.getByText(/no notifications yet/i)).toBeVisible();
   });
@@ -131,21 +150,22 @@ test.describe("Webhook event pipeline", () => {
 // ─── Full E2E Flow ───────────────────────────────────────────────────────────
 
 test.describe("Full notification flow", () => {
+  test.beforeEach(async () => {
+    await clearDB();
+  });
+
   test("login → create rule → fire webhook → notification appears on dashboard", async ({
     page
   }) => {
     await loginAs(page, "owner@ara-research.dev", "password123");
 
-    // Create rule
     await page.getByLabel("Name").fill("E2E Payment Alert");
     await page.getByRole("button", { name: /save rule/i }).click();
     await expect(page.getByLabel("Name")).toHaveValue("", { timeout: 5000 });
 
-    // Fire webhook
     const res = await fireEvent(page);
     expect(res.status()).toBe(200);
 
-    // Assert notification appears within one poll cycle
     await expect(page.getByText(/E2E Payment Alert.*matched/i)).toBeVisible({ timeout: 10000 });
   });
 
@@ -156,7 +176,6 @@ test.describe("Full notification flow", () => {
     await page.getByRole("button", { name: /save rule/i }).click();
     await expect(page.getByLabel("Name")).toHaveValue("", { timeout: 5000 });
 
-    // Fire with different accountId — catch-all should still match
     const res = await fireEvent(page, { id: `e2e_catchall_${Date.now()}`, accountId: "acc_other" });
     expect(res.status()).toBe(200);
 
