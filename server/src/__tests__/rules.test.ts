@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import jwt from "jsonwebtoken";
 import { buildApp } from "../app";
+import { RuleModel } from "../models/Rule";
 
 let mongod: MongoMemoryServer;
 const app = buildApp();
@@ -14,6 +15,8 @@ const token = jwt.sign({ email: "test@example.com" }, TEST_SECRET, { subject: "u
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   await mongoose.connect(mongod.getUri());
+  // Ensure indexes (including unique compound conditions index) are created before tests run
+  await RuleModel.syncIndexes();
 });
 
 afterAll(async () => {

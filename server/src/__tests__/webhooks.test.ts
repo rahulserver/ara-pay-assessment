@@ -4,6 +4,7 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 import { buildApp } from "../app";
 import { NotificationModel } from "../models/Notification";
 import { RuleModel } from "../models/Rule";
+import { EventModel } from "../models/Event";
 
 let mongod: MongoMemoryServer;
 const app = buildApp();
@@ -11,6 +12,8 @@ const app = buildApp();
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   await mongoose.connect(mongod.getUri());
+  await EventModel.syncIndexes();
+  await RuleModel.syncIndexes();
 });
 
 afterAll(async () => {
