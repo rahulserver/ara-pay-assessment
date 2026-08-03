@@ -6,7 +6,7 @@ import { buildApp } from "../app";
 import { RuleModel } from "../models/Rule";
 
 let mongod: MongoMemoryServer;
-const app = buildApp();
+let app: ReturnType<typeof buildApp>;
 const TEST_SECRET = "dev-secret"; // matches env.ts fallback — no JWT_SECRET env var set in tests
 
 // Generate a valid token for authenticated requests
@@ -15,6 +15,8 @@ const token = jwt.sign({ email: "test@example.com" }, TEST_SECRET, { subject: "u
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   await mongoose.connect(mongod.getUri());
+  // Build app AFTER connecting — ensures models are bound to the test connection
+  app = buildApp();
   // Ensure indexes (including unique compound conditions index) are created before tests run
   await RuleModel.syncIndexes();
 });

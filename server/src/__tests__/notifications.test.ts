@@ -8,12 +8,13 @@ import { NotificationModel } from "../models/Notification";
 import { RuleModel } from "../models/Rule";
 
 let mongod: MongoMemoryServer;
-const app = buildApp();
+let app: ReturnType<typeof buildApp>;
 const token = jwt.sign({ email: "test@example.com" }, "dev-secret", { subject: "user_1" });
 
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   await mongoose.connect(mongod.getUri());
+  app = buildApp();
 });
 
 afterAll(async () => {

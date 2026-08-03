@@ -7,11 +7,12 @@ import { RuleModel } from "../models/Rule";
 import { EventModel } from "../models/Event";
 
 let mongod: MongoMemoryServer;
-const app = buildApp();
+let app: ReturnType<typeof buildApp>;
 
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   await mongoose.connect(mongod.getUri());
+  app = buildApp();
   await EventModel.syncIndexes();
   await RuleModel.syncIndexes();
 });
