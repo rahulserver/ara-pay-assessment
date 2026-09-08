@@ -10,7 +10,7 @@ const router = Router();
 // Ensures that a default user exists in the database.
 // If not, it creates one with a predefined email and password.
 export async function ensureDefaultUser(): Promise<void> {
-  const existing = await UserModel.findOne({ email: "owner@ara-research.dev" });
+  const existing = await UserModel.findOne({ email: "owner@example.com" });
 
   if (existing) {
     return;
@@ -19,7 +19,7 @@ export async function ensureDefaultUser(): Promise<void> {
   const passwordHash = await bcrypt.hash("password123", 10);
 
   await UserModel.create({
-    email: "owner@ara-research.dev",
+    email: "owner@example.com",
     passwordHash,
     role: "owner"
   });

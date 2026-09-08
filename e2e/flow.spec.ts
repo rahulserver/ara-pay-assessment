@@ -5,7 +5,7 @@ const API_URL = "http://localhost:4000";
 const APP_URL = "http://localhost:3001";
 const MONGO_URI =
   process.env.MONGO_URI ||
-  "mongodb://root:root@localhost:27018/ara_assessment?authSource=admin";
+  "mongodb://root:root@localhost:27018/webhookpulse?authSource=admin";
 
 async function clearDB() {
   const client = new MongoClient(MONGO_URI);
@@ -53,14 +53,14 @@ test.describe("Authentication", () => {
 
   test("login fails with wrong password", async ({ page }) => {
     await page.goto(APP_URL);
-    await page.getByLabel("Email").fill("owner@ara-research.dev");
+    await page.getByLabel("Email").fill("owner@example.com");
     await page.getByLabel("Password").fill("wrongpassword");
     await page.getByRole("button", { name: /sign in/i }).click();
     await expect(page.getByText(/invalid credentials/i)).toBeVisible();
   });
 
   test("login succeeds with valid credentials", async ({ page }) => {
-    await loginAs(page, "owner@ara-research.dev", "password123");
+    await loginAs(page, "owner@example.com", "password123");
   });
 });
 
@@ -69,7 +69,7 @@ test.describe("Authentication", () => {
 test.describe("Rule management", () => {
   test.beforeEach(async ({ page }) => {
     await clearDB();
-    await loginAs(page, "owner@ara-research.dev", "password123");
+    await loginAs(page, "owner@example.com", "password123");
   });
 
   test("creates a rule and resets the form", async ({ page }) => {
@@ -159,7 +159,7 @@ test.describe("Webhook event pipeline", () => {
 
   test("event without a matching rule creates no notification", async ({ page }) => {
     await clearDB();
-    await loginAs(page, "owner@ara-research.dev", "password123");
+    await loginAs(page, "owner@example.com", "password123");
 
     // No rules exist — fire event, wait one poll cycle
     await fireEvent(page, { id: `e2e_nomatch_${Date.now()}` });
@@ -178,7 +178,7 @@ test.describe("Full notification flow", () => {
   test("login → create rule → fire webhook → notification appears on dashboard", async ({
     page
   }) => {
-    await loginAs(page, "owner@ara-research.dev", "password123");
+    await loginAs(page, "owner@example.com", "password123");
 
     await page.getByLabel("Name").fill("E2E Payment Alert");
     await page.getByRole("button", { name: /save rule/i }).click();
@@ -191,7 +191,7 @@ test.describe("Full notification flow", () => {
   });
 
   test("catch-all rule fires for any matching eventType", async ({ page }) => {
-    await loginAs(page, "owner@ara-research.dev", "password123");
+    await loginAs(page, "owner@example.com", "password123");
 
     await page.getByLabel("Name").fill("Catch-All Payment Rule");
     await page.getByRole("button", { name: /save rule/i }).click();
@@ -206,7 +206,7 @@ test.describe("Full notification flow", () => {
   });
 
   test("specific rule suppresses catch-all (specificity)", async ({ page }) => {
-    await loginAs(page, "owner@ara-research.dev", "password123");
+    await loginAs(page, "owner@example.com", "password123");
 
     // Create catch-all rule (score 0)
     await page.getByLabel("Name").fill("Generic Payment Rule");
@@ -244,7 +244,7 @@ test.describe("Pipeline notification logic", () => {
   // Helper: get auth token via API
   async function getToken(request: import("@playwright/test").APIRequestContext) {
     const res = await request.post(`${API_URL}/auth/login`, {
-      data: { email: "owner@ara-research.dev", password: "password123" }
+      data: { email: "owner@example.com", password: "password123" }
     });
     const body = await res.json();
     return body.token as string;

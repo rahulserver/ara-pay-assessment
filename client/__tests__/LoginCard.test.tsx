@@ -16,7 +16,7 @@ describe("LoginCard", () => {
 
   it("pre-fills with default credentials", () => {
     render(<LoginCard onLogin={vi.fn()} />);
-    expect(screen.getByDisplayValue("owner@ara-research.dev")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("owner@example.com")).toBeInTheDocument();
   });
 
   it("calls onLogin with email and password on submit", async () => {
@@ -26,7 +26,7 @@ describe("LoginCard", () => {
     await userEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     await waitFor(() => {
-      expect(mockLogin).toHaveBeenCalledWith("owner@ara-research.dev", "password123");
+      expect(mockLogin).toHaveBeenCalledWith("owner@example.com", "password123");
     });
   });
 

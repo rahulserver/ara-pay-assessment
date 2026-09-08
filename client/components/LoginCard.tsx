@@ -8,7 +8,7 @@ interface LoginCardProps {
 }
 
 export default function LoginCard({ onLogin }: LoginCardProps) {
-  const [email, setEmail] = useState("owner@ara-research.dev");
+  const [email, setEmail] = useState("owner@example.com");
   const [password, setPassword] = useState("password123");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

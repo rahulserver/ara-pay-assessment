@@ -2,7 +2,7 @@ import { MongoClient } from "mongodb";
 
 const MONGO_URI =
   process.env.MONGO_URI ||
-  "mongodb://root:root@localhost:27018/ara_assessment?authSource=admin";
+  "mongodb://root:root@localhost:27018/webhookpulse?authSource=admin";
 
 export default async function globalSetup() {
   console.log("[e2e setup] connecting to MongoDB...");

@@ -19,7 +19,7 @@ The limit was set generously to accommodate the free-form `payload` field on web
 Reduced limit to `100kb`, scoped specifically to the `/webhooks` router (not globally), and extracted the value to `Http.MAX_WEBHOOK_BODY_SIZE` in `server/src/constants.ts`.
 
 **Why noted:**
-On a public-facing webhook endpoint, oversized bodies can be used to exhaust server memory (DoS vector — OWASP A05). Left out of scope for this assessment since the endpoint is internal/simulator-driven, but flagged as a hardening item.
+On a public-facing webhook endpoint, oversized bodies can be used to exhaust server memory (DoS vector — OWASP A05). Left out of scope for now since the endpoint is internal/simulator-driven, but flagged as a hardening item.
 
 ---
 
@@ -56,7 +56,7 @@ Added Zod (`server/src/zschemas/index.ts`) as single source of truth for both ru
 Code trace of the webhook handler. The original `// FIXME` comment confirmed it was a known gap.
 
 **Root cause:**
-Intentional deferral by the contractor — comment said "should be awaited once we tighten pipeline consistency."
+Intentional deferral in the initial implementation — a comment noted it "should be awaited once we tighten pipeline consistency."
 
 **Fix:**
 
@@ -77,7 +77,7 @@ Intentional deferral by the contractor — comment said "should be awaited once 
 Code trace — the for loop had `doesRuleLikelyMatch` working correctly but the match block was explicitly marked as a stub with `// Intentionally left as a stub for now.`
 
 **Root cause:**
-Contractor left the pipeline unimplemented. The scaffolding (loop, per-rule try/catch, match function) was in place but the core action — creating a notification — was missing.
+The pipeline was left unimplemented in the initial scaffold. The scaffolding (loop, per-rule try/catch, match function) was in place but the core action — creating a notification — was missing.
 
 **Fix:**
 Implemented `NotificationModel.create()` for each matching rule with a human-readable message. Per-rule try/catch was already in place, so failures in one rule don't drop processing of subsequent rules.
@@ -98,7 +98,7 @@ The current evaluation engine (`doesRuleLikelyMatch`) handles the three defined 
 Code review of auth middleware. The original comment admitted it: `"we allow slightly stale tokens during local dev for convenience"`.
 
 **Root cause:**
-Local dev shortcut that was never reverted before handoff.
+Local dev shortcut that was never reverted.
 
 **Fix:**
 Made `ignoreExpiration` conditional on `NODE_ENV === "development"`. In production, tokens expire as intended. In local dev, the convenience bypass is preserved intentionally.
@@ -116,7 +116,7 @@ The server `POST /rules` expected snake_case fields (`event_type`, `min_amount`,
 Comparing `RuleDraft` interface in `client/lib/types.ts` against the server's `CreateRuleSchema`. The suppressed catch block was the explicit admission.
 
 **Root cause:**
-The server used snake_case for this one endpoint while the rest of the codebase (Mongoose models, responses, client) consistently uses camelCase. A contractor inconsistency, not a deliberate design choice.
+The server used snake_case for this one endpoint while the rest of the codebase (Mongoose models, responses, client) consistently uses camelCase — an inconsistency in the initial implementation, not a deliberate design choice.
 
 **Fix:**
 Updated `CreateRuleSchema` to use camelCase field names, consistent with the rest of the codebase. Also fixed `minAmount` to use `z.coerce.number()` since the form sends it as a string from a text input.

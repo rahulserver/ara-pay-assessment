@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { AuthError, getToken, setToken, clearToken } from "../lib/auth";
 
-const TOKEN_KEY = "ara_fullstack_token";
+const TOKEN_KEY = "webhookpulse_token";
 
 beforeEach(() => {
   localStorage.clear();

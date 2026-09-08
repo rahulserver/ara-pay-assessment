@@ -6,7 +6,7 @@ export class AuthError extends Error {
   }
 }
 
-const TOKEN_KEY = "ara_fullstack_token";
+const TOKEN_KEY = "webhookpulse_token";
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;

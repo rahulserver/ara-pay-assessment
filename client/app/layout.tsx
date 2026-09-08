@@ -4,7 +4,7 @@ import Providers from "./providers";
 
 export const metadata: Metadata = {
   title: "Webhook Notification Dashboard",
-  description: "Ara Research integration puzzle"
+  description: "Real-time webhook ingestion, rule-based matching, and notification dashboard"
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
